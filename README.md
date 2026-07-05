@@ -338,8 +338,8 @@ MIT License
 
 如有问题或建议，欢迎通过以下方式联系：
 
-- GitHub Issues：[提交问题](https://github.com/yourusername/xiaohongshu-cover/issues)
-- 邮箱：your@email.com
+- GitHub Issues：[提交问题](https://github.com/taohuayuan21bc/xiaohongshu-cover/issues)
+- 邮箱：taohuayuan21bc@yeah.net
 
 ---
 
