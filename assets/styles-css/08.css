@@ -1,0 +1,43 @@
+<style>
+/* v15.0 #8 东方数字水墨 CSS 模板 */
+:root {
+  --ACCENT: #C23B3B;
+  --ACCENT_R: 194; --ACCENT_G: 59; --ACCENT_B: 59;
+  --BG_R: 245; --BG_G: 240; --BG_B: 232;
+  --TEXT_R: 44; --TEXT_G: 24; --TEXT_B: 16;
+  --COVER_BG: linear-gradient(135deg, #F5F0E8 0%, #F0E8D8 40%, #E8DCC8 100%);
+  --OVERLAY_BG: linear-gradient(180deg, rgba(245,240,232,0.3) 0%, rgba(245,240,232,0.6) 50%, rgba(245,240,232,0.8) 100%);
+  --LOGO_GUARD_BG: rgba(245,240,232,0.45);
+  --SOFTLIGHT_BG: rgba(44,24,16,0.08);
+  --TEXT_PRIMARY: #2C1810;
+  --ACCOUNT_COLOR: rgba(44,24,16,0.55);
+  --AUTHOR_COLOR: rgba(44,24,16,0.5);
+  --SUPP_COLOR: rgba(44,24,16,0.6);
+  --DESC_COLOR: rgba(44,24,16,0.5);
+  --DIVIDER_BG: linear-gradient(to right, transparent, rgba(194,59,59,0.3), transparent);
+  --HIGHLIGHT_BG: rgba(194,59,59,0.12);
+  --TAG_LINE_COLOR: rgba(194,59,59,0.2);
+  --TAG_UNDERLINE: rgba(194,59,59,0.25);
+  --TAG_UNDERLINE_HOVER: rgba(194,59,59,0.5);
+  --TAG_DIAMOND: rgba(194,59,59,0.4);
+  --TAG_DIAMOND_HOVER: rgba(194,59,59,0.6);
+  --CH_MARK_COLOR: rgba(194,59,59,0.15);
+  --VERT_ACCENT_BG: #ff8181;
+  --INK_BLOT_BG: rgba(194,59,59,0.08);
+  --SCATTER_COLOR: rgba(194,59,59,0.12);
+  --ENGRAVE_BG: rgba(194,59,59,0.05);
+  --MAP_COLOR: #ea6363;
+  --BORDER_COLOR: rgba(194,59,59,0.08);
+  --CONTENT_PADDING: 60px 72px 52px 72px;
+  --TITLE_SIZE: 56px;
+  --SUBTITLE_SIZE: 22px;
+  --SUPP_SIZE: 14px;
+  --DESC_SIZE: 13px;
+  --TAG_SIZE: 11px;
+  --MODE_BG: #F5F0E8;
+  --MODE_CARD_BG: rgba(255,255,255,0.6);
+  --MODE_TEXT: #3A3028;
+  --BODY_FONT: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
+}
+.main-title { font-family: 'ZCOOL XiaoWei', 'Noto Serif SC', serif; }
+</style>

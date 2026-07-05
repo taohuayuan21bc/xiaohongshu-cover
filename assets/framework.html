@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<!-- xiaohongshu-cover v28.1 framework — 注入标记 + initBg script-level 调用 + LOGO 手动配置（上传/布局/显示切换） + 彻底修复默认 LOGO 方框 bug（空 src 不渲染） -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小红书封面生成器</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<style>
+/* === FRAMEWORK CSS (compact) === */
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;flex-direction:row;align-items:flex-start;justify-content:center;min-height:100vh;background:var(--MODE_BG);font-family:'PingFang SC','Microsoft YaHei','Noto Serif SC',serif;padding:30px 20px;gap:30px;transition:background 0.3s ease}
+.layout-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:360px;max-height:calc(100vh - 60px);overflow-y:auto;padding-right:8px;padding-bottom:20px;scrollbar-width:thin;scrollbar-color:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.2) transparent}
+.layout-left::-webkit-scrollbar{width:5px}
+.layout-left::-webkit-scrollbar-track{background:transparent}
+.layout-left::-webkit-scrollbar-thumb{background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.2);border-radius:3px}
+.layout-right{display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:sticky;top:30px}
+@media(max-width:900px){body{flex-direction:column!important;padding:16px!important;gap:16px!important;align-items:center!important}.layout-left{width:100%!important;max-height:35vh!important;overflow-y:auto!important;flex-shrink:1!important}.layout-right{position:static!important;flex-shrink:0!important}#cover-canvas{transform-origin:top center}.option-row{grid-template-columns:1fr 1fr 1fr}}
+#cover-canvas{width:540px;height:720px;position:relative;overflow:hidden;background:var(--COVER_BG);box-shadow:0 8px 40px rgba(0,0,0,0.15);transition:width 0.3s ease,height 0.3s ease}
+#cover-canvas .bg-filter-wrap{position:absolute;inset:0;z-index:0;overflow:hidden;display:none}
+#cover-canvas .bg-filter-wrap .bg-image-layer{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block!important}
+#cover-canvas .bg-overlay{position:absolute;inset:0;z-index:0;pointer-events:none;background:var(--OVERLAY_BG);display:none}
+#cover-canvas .blend-softlight{position:absolute;inset:0;z-index:1;pointer-events:none;display:none;background:var(--SOFTLIGHT_BG);mix-blend-mode:soft-light}
+#cover-canvas .decor-layer{position:absolute;inset:0;z-index:1;pointer-events:none}
+#cover-canvas::after{content:'';position:absolute;inset:8px;z-index:4;border:1px solid var(--BORDER_COLOR);pointer-events:none}
+.chapter-mark{position:absolute;font-family:'Noto Serif SC',serif;font-weight:900;color:var(--CH_MARK_COLOR);font-size:120px;line-height:1}
+.vertical-accent{position:absolute;left:36px;top:20%;bottom:20%;width:1px;background:var(--VERT_ACCENT_BG)}
+.ink-blot{position:absolute;border-radius:50%;background:var(--INK_BLOT_BG);filter:blur(8px)}
+.scattered-text{position:absolute;font-family:'Noto Serif SC',serif;font-weight:900;color:var(--SCATTER_COLOR);opacity:.05;font-size:24px;letter-spacing:6px;animation:textDrift 10s ease-in-out infinite}
+@keyframes textDrift{0%,100%{opacity:.03;transform:translateY(0)}50%{opacity:.07;transform:translateY(-15px)}}
+.engraving-line{position:absolute;background:var(--ENGRAVE_BG);border-radius:2px}
+.map-marker{position:absolute;width:16px;height:16px;border:1px solid var(--MAP_COLOR);border-radius:50%}
+.map-marker::before{content:'+';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:10px;color:var(--MAP_COLOR)}
+.ash-particle{position:absolute;width:2px;height:2px;background:var(--ACCENT);border-radius:50%;animation:ashFloat 8s ease-in-out infinite}
+@keyframes ashFloat{0%,100%{opacity:0;transform:translateY(0)}50%{opacity:.2;transform:translateY(-30px)}}
+#cover-canvas .content-layer{position:relative;z-index:2;width:100%;height:100%;display:flex;flex-direction:column;padding:var(--CONTENT_PADDING);transition:padding 0.3s ease}
+.header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.tag-row{display:flex;align-items:center;gap:8px}
+.tag-dot{width:7px;height:7px;border-radius:50%;background:var(--ACCENT);opacity:.8}
+.tag-label{font-size:11px;font-weight:400;color:var(--ACCENT);letter-spacing:4px}
+.account-name-top{font-size:18px;color:var(--ACCOUNT_COLOR);letter-spacing:2px}
+.main-title-block{display:flex;flex-direction:column;align-items:center;margin-top:12px}
+.main-title{font-family:'Noto Serif SC',serif;font-size:var(--TITLE_SIZE);font-weight:900;color:var(--TEXT_PRIMARY);letter-spacing:6px;line-height:1.25;text-align:center;margin-bottom:8px;transition:font-weight 0.2s,letter-spacing 0.2s,line-height 0.2s,font-size 0.3s ease}
+.main-title .highlight{color:var(--ACCENT);position:relative}
+.main-title .highlight::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--HIGHLIGHT_BG)}
+.author-line{font-size:18px;font-weight:400;color:var(--AUTHOR_COLOR);letter-spacing:3px;margin-top:2px}
+.divider{width:80px;height:1px;background:var(--DIVIDER_BG);margin:20px auto}
+.subtitle{font-size:var(--SUBTITLE_SIZE);font-weight:300;color:var(--TEXT_PRIMARY);letter-spacing:3px;line-height:1.6;text-align:center;margin-bottom:10px;transition:font-size 0.3s,font-weight 0.2s,letter-spacing 0.2s,line-height 0.2s}
+.subtitle .keyword{color:var(--ACCENT)}
+.supplement{font-size:var(--SUPP_SIZE);font-weight:300;color:var(--SUPP_COLOR);letter-spacing:1.5px;line-height:1.7;text-align:center;margin-bottom:8px;transition:font-size 0.3s,font-weight 0.2s,letter-spacing 0.2s,line-height 0.2s}
+.description{font-size:var(--DESC_SIZE);font-weight:300;color:var(--DESC_COLOR);letter-spacing:1px;line-height:1.8;text-align:center;padding:0 6px;margin-bottom:12px;transition:font-size 0.3s,font-weight 0.2s,letter-spacing 0.2s,line-height 0.2s}
+.bottom-row{margin-top:auto;display:flex;justify-content:center;align-items:flex-end;padding-bottom:4px;transition:padding-bottom 0.3s ease}
+.meta-tags{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;position:relative}
+.meta-tags::before{content:'';position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:40px;height:1px;background:var(--TAG_LINE_COLOR);transition:width 0.3s ease}
+.meta-tag{font-size:var(--TAG_SIZE);font-weight:400;color:var(--ACCENT);letter-spacing:3px;padding:6px 16px;position:relative;transition:all 0.2s ease}
+.meta-tag::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:60%;height:1px;background:var(--TAG_UNDERLINE);transition:width 0.3s ease,background 0.3s ease}
+.meta-tag:hover::after{width:100%;background:var(--TAG_UNDERLINE_HOVER)}
+.meta-tag::before{content:'\25C6';font-size:6px;margin-right:8px;color:var(--TAG_DIAMOND);vertical-align:middle;transition:color 0.2s ease}
+.meta-tag:hover::before{color:var(--TAG_DIAMOND_HOVER)}
+.meta-tags:hover::before{width:80px}
+
+#watermark-control{display:none;flex-direction:column;gap:6px;padding:10px;border:1px dashed rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.25);border-radius:8px;background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.03)}
+.options-panel{width:100%;display:flex;flex-direction:column;gap:10px}
+.step-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:#6B5B4B;text-transform:uppercase;font-family:'Noto Serif SC',serif}
+.option-row{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.option-card{padding:6px 4px;border:1.5px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.2);border-radius:6px;background:var(--MODE_CARD_BG);cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;position:relative;backdrop-filter:blur(4px)}
+.option-card:hover{border-color:var(--ACCENT);background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);transform:translateY(-1px);box-shadow:0 2px 8px rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.1)}
+.option-card.selected{border-color:var(--ACCENT);background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);box-shadow:0 0 0 2px rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.1)}
+.option-card.selected::after{content:'\2713';position:absolute;top:2px;right:4px;font-size:8px;color:var(--ACCENT);font-weight:700}
+.option-icon{font-size:14px}
+.option-title{font-size:10px;font-weight:700;color:var(--MODE_TEXT);letter-spacing:.3px}
+.option-desc{font-size:9px;color:var(--MODE_TEXT);opacity:.5;letter-spacing:.3px;line-height:1.3}
+.anchor-grid{display:flex;gap:4px;flex-wrap:wrap}
+.anchor-btn{width:52px;height:44px;padding:2px;border:2px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.2);border-radius:6px;background:var(--MODE_CARD_BG);cursor:pointer;transition:all 0.2s;position:relative;display:flex;align-items:center;justify-content:center}
+.anchor-btn:hover{border-color:var(--ACCENT);background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08)}
+.anchor-btn.selected{border-color:var(--ACCENT);background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);box-shadow:0 0 0 2px rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.1)}
+.anchor-dot{width:8px;height:8px;border-radius:50%;background:var(--ACCENT);opacity:.7;position:absolute}
+.anchor-dot.tl{top:8px;left:8px}.anchor-dot.tr{top:8px;right:8px}.anchor-dot.bl{bottom:8px;left:8px}.anchor-dot.br{bottom:8px;right:8px}
+.anchor-dot.cc{top:50%;left:50%;transform:translate(-50%,-50%)}
+.anchor-label{font-size:9px;color:var(--MODE_TEXT);opacity:.6;letter-spacing:.5px;position:absolute;bottom:1px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.upload-label{cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px dashed rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.4);border-radius:6px;background:var(--MODE_CARD_BG);font-size:11px;color:var(--MODE_TEXT);opacity:.7;letter-spacing:.5px}
+.blend-slider-row{width:100%;display:flex;align-items:center;gap:4px}
+.blend-slider-row span:first-child{font-size:9px;color:var(--ACCENT);letter-spacing:.3px;white-space:nowrap;min-width:52px}
+.blend-slider-row input[type="range"]{flex:1;accent-color:var(--ACCENT);min-width:60px}
+.blend-slider-row span:last-child{font-size:9px;color:var(--ACCENT);font-weight:700;min-width:26px;text-align:right}
+#blend-control button{padding:3px 8px;font-size:9px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:4px;background:var(--MODE_CARD_BG);cursor:pointer;color:var(--ACCENT);letter-spacing:.5px;transition:all 0.2s}
+#blend-control button:hover{background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.1)}
+.export-btn{margin-top:12px;padding:8px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;font-family:'Noto Serif SC',serif}
+.export-btn:hover{background:#333;transform:translateY(-1px)}
+.export-btn i{font-size:13px}
+.exporting-toast{display:none;margin-top:8px;color:#666;font-size:11px}
+body.dark-mode{background:#1A1A1C}
+body.dark-mode .step-label{color:rgba(234,224,213,0.6)}
+body.dark-mode .option-title{color:#EAE0D5}
+body.dark-mode .option-desc{color:rgba(234,224,213,0.5)}
+body.dark-mode .export-btn{background:#EAE0D5;color:#1A1A1C}
+body.dark-mode .export-btn:hover{background:#FFF}
+body.dark-mode .exporting-toast{color:rgba(234,224,213,0.6)}
+body.dark-mode #title-font-input,body.dark-mode #content-font-input{color:#EAE0D5;border-color:rgba(234,224,213,0.2)}
+body.dark-mode #title-font-input:focus,body.dark-mode #content-font-input:focus{border-color:var(--ACCENT)}
+body.dark-mode .option-card{background:rgba(255,255,255,0.04);border-color:rgba(234,224,213,0.12)}
+body.dark-mode .option-card:hover{background:rgba(234,224,213,0.08);border-color:var(--ACCENT)}
+body.dark-mode .option-card.selected{background:rgba(234,224,213,0.08);border-color:var(--ACCENT)}
+body.dark-mode .anchor-btn{background:rgba(255,255,255,0.04);border-color:rgba(234,224,213,0.12)}
+body.dark-mode .anchor-btn:hover{border-color:var(--ACCENT);background:rgba(234,224,213,0.08)}
+body.dark-mode .anchor-btn.selected{border-color:var(--ACCENT);background:rgba(234,224,213,0.08)}
+body.dark-mode .anchor-label{color:rgba(234,224,213,0.4)}
+body.dark-mode .upload-label{background:rgba(255,255,255,0.04);border-color:rgba(234,224,213,0.2);color:rgba(234,224,213,0.5)}
+body.dark-mode .upload-label:hover{color:rgba(234,224,213,0.8);border-color:var(--ACCENT)}
+body.dark-mode #blend-control,body.dark-mode #fine-tune-control,body.dark-mode #watermark-control{background:rgba(255,255,255,0.03);border-color:rgba(234,224,213,0.12)}
+body.dark-mode #blend-control button,body.dark-mode #fine-tune-control button{background:rgba(255,255,255,0.06);border-color:rgba(234,224,213,0.2);color:rgba(234,224,213,0.8)}
+body.dark-mode #blend-control button:hover,body.dark-mode #fine-tune-control button:hover{background:rgba(234,224,213,0.12);color:#EAE0D5}
+body.dark-mode .shortcut-hint{color:rgba(234,224,213,0.4)}
+body.dark-mode .blend-slider-row span{color:rgba(234,224,213,0.6)}
+.accordion-section{margin-bottom:4px;border-radius:8px;overflow:hidden;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.12);background:var(--MODE_CARD_BG)}
+.accordion-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;user-select:none;font-size:11px;font-weight:700;color:var(--ACCENT);letter-spacing:1.5px;transition:background 0.2s}
+.accordion-header:hover{background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.06)}
+.accordion-arrow{font-size:10px;transition:transform 0.3s ease;opacity:.5;display:inline-block}
+.accordion-section.open .accordion-arrow{transform:rotate(90deg)}
+.accordion-body{max-height:0;overflow:hidden;transition:max-height 0.4s cubic-bezier(0.4,0,0.2,1)}
+.accordion-body-inner{padding:4px 10px 10px 10px}
+.accordion-section.open .accordion-body{max-height:2000px}
+body.dark-mode .accordion-section{border-color:rgba(234,224,213,0.1);background:rgba(255,255,255,0.03)}
+body.dark-mode .accordion-header{color:rgba(234,224,213,0.8)}
+body.dark-mode .accordion-header:hover{background:rgba(234,224,213,0.05)}
+.sub-accordion-header{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none;font-size:9px;font-weight:600;color:var(--ACCENT);opacity:.55;letter-spacing:1.5px;padding:3px 0;transition:opacity 0.2s}
+.sub-accordion-header:hover{opacity:.85}
+.sub-accordion-arrow{font-size:8px;transition:transform 0.25s ease;display:inline-block}
+.sub-accordion-section.open .sub-accordion-arrow{transform:rotate(90deg)}
+.sub-accordion-body{max-height:0;overflow:hidden;transition:max-height 0.35s ease;display:flex;flex-direction:column;gap:5px}
+.sub-accordion-section.open .sub-accordion-body{max-height:500px}
+body.dark-mode .sub-accordion-header{color:rgba(234,224,213,0.6)}
+body.dark-mode .sub-accordion-header:hover{color:rgba(234,224,213,0.85)}
+/* v28.1: LOGO 手动配置样式 — .logo-preview 默认隐藏（无有效 src 时不渲染，避免破损图片方框 bug） */
+.blend-logo-guard{position:absolute;z-index:1;pointer-events:none;display:none;border-radius:50%;filter:blur(12px)}
+.logo-preview,.logo-export{position:absolute;z-index:3;pointer-events:none;object-fit:contain;opacity:0.85}
+.logo-preview{display:none}.logo-export{display:none}
+.logo-upload-preview{position:absolute;z-index:3;pointer-events:none;object-fit:contain;display:none}
+</style>
+<!-- INJECT_STYLE_CSS -->
+</head>
+<body>
+<div class="layout-left">
+  <div class="options-panel">
+    <!-- 画布设置 -->
+    <div class="accordion-section open">
+      <div class="accordion-header" onclick="toggleAccordion(this)"><span>🎨 画布设置</span><span class="accordion-arrow">▸</span></div>
+      <div class="accordion-body"><div class="accordion-body-inner">
+    <div class="step-label">背景图片</div>
+    <div class="option-row" id="bg-options">
+      <div class="option-card" data-bg="ai" onclick="selectBg(this,'ai')"><div class="option-icon">AI</div><div class="option-title">AI 生成背景</div></div>
+      <div class="option-card selected" data-bg="none" onclick="selectBg(this,'none')"><div class="option-icon">🎨</div><div class="option-title">纯设计封面</div></div>
+      <div class="option-card" data-bg="upload" onclick="selectBg(this,'upload')"><div class="option-icon">📁</div><div class="option-title">上传背景图</div></div>
+      <div class="option-card" data-bg="clipboard" onclick="selectBg(this,'clipboard')"><div class="option-icon">📋</div><div class="option-title">粘贴截图</div></div>
+    </div>
+    <div id="upload-bg-area" style="display:none"><label class="upload-label" style="justify-content:center;cursor:pointer"><i class="fa-solid fa-image"></i> 点击上传背景图<input type="file" accept="image/*" onchange="handleBgUpload(this.files[0])" style="display:none"></label></div>
+    <div id="clipboard-bg-area" style="display:none"><label class="upload-label" style="justify-content:center;cursor:pointer;display:flex"><i class="fa-solid fa-paste"></i> 按 Ctrl+V 粘贴或点击上传截图<input type="file" accept="image/*" onchange="handleBgUpload(this.files[0])" style="display:none"></label></div>
+
+    <div class="step-label" style="margin-top:4px">画布尺寸</div>
+    <div class="option-row" id="size-options">
+      <div class="option-card selected" data-size="3-4" onclick="switchCanvasSize(this,'3-4')"><div class="option-icon">📱</div><div class="option-title">竖版 3:4</div><div class="option-desc">540×720</div></div>
+      <div class="option-card" data-size="9-16" onclick="switchCanvasSize(this,'9-16')"><div class="option-icon">📲</div><div class="option-title">竖版 9:16</div><div class="option-desc">540×960</div></div>
+      <div class="option-card" data-size="4-3" onclick="switchCanvasSize(this,'4-3')"><div class="option-icon">🖥</div><div class="option-title">横版 4:3</div><div class="option-desc">720×540</div></div>
+      <div class="option-card" data-size="16-9" onclick="switchCanvasSize(this,'16-9')"><div class="option-icon">🎬</div><div class="option-title">横版 16:9</div><div class="option-desc">960×540</div></div>
+      <div class="option-card" data-size="1-1" onclick="switchCanvasSize(this,'1-1')"><div class="option-icon">⬜</div><div class="option-title">方形 1:1</div><div class="option-desc">600×600</div></div>
+    </div>
+    <div class="step-label" style="margin-top:4px">主题模式</div>
+    <div class="option-row" id="theme-options">
+      <div class="option-card selected" data-theme="light" onclick="switchTheme(this,'light')"><div class="option-icon">☀️</div><div class="option-title">浅色模式</div></div>
+      <div class="option-card" data-theme="dark" onclick="switchTheme(this,'dark')"><div class="option-icon">🌙</div><div class="option-title">暗色模式</div></div>
+    </div>
+      </div></div>
+    </div>
+    <!-- 背景调整 -->
+    <div class="accordion-section" id="bg-adjust-group">
+      <div class="accordion-header" onclick="toggleAccordion(this)"><span>🔍 背景调整</span><span class="accordion-arrow">▸</span></div>
+      <div class="accordion-body"><div class="accordion-body-inner">
+    <div id="bg-scale-control" style="display:none;flex-direction:column;gap:8px">
+      <div class="step-label">背景缩放</div>
+      <div class="anchor-grid" id="anchor-options">
+        <div class="anchor-btn selected" data-anchor="tl" onclick="selectAnchor(this,'tl')"><div class="anchor-dot tl"></div><span class="anchor-label">左上角</span></div>
+        <div class="anchor-btn" data-anchor="tr" onclick="selectAnchor(this,'tr')"><div class="anchor-dot tr"></div><span class="anchor-label">右上角</span></div>
+        <div class="anchor-btn" data-anchor="bl" onclick="selectAnchor(this,'bl')"><div class="anchor-dot bl"></div><span class="anchor-label">左下角</span></div>
+        <div class="anchor-btn" data-anchor="br" onclick="selectAnchor(this,'br')"><div class="anchor-dot br"></div><span class="anchor-label">右下角</span></div>
+        <div class="anchor-btn" data-anchor="cc" onclick="selectAnchor(this,'cc')"><div class="anchor-dot cc"></div><span class="anchor-label">中心点</span></div>
+        <div class="anchor-btn" data-anchor="tc" onclick="selectAnchor(this,'tc')"><div class="anchor-dot" style="top:8px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:var(--ACCENT);opacity:.7;position:absolute"></div><span class="anchor-label">顶部中点</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap">缩放度</span><input type="range" id="bg-scale-slider" min="50" max="200" value="100" oninput="adjustBgScale(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="bg-scale-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">100%</span></div>
+    </div>
+    <div id="bg-opacity-control" style="display:none;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap">前景透明度</span><input type="range" id="bg-opacity-slider" min="0" max="80" value="25" oninput="adjustBgOpacity(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="bg-opacity-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">25%</span></div>
+    <div id="bg-transparency-control" style="display:none;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap">背景透明度</span><input type="range" id="bg-transparency-slider" min="0" max="100" value="100" oninput="adjustBgTransparency(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="bg-transparency-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">100%</span></div>
+    <div style="display:flex;gap:6px;margin-top:4px"><button onclick="resetBgAdjust()" style="flex:1;padding:6px 10px;font-size:10px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:4px;background:var(--MODE_CARD_BG);cursor:pointer;color:var(--ACCENT);letter-spacing:1px;transition:all 0.2s">↺ 重置背景调整</button></div>
+      </div></div>
+    </div>
+    <!-- 混合增强 -->
+    <div class="accordion-section" id="blend-group">
+      <div class="accordion-header" onclick="toggleAccordion(this)"><span>🌈 混合增强</span><span class="accordion-arrow">▸</span></div>
+      <div class="accordion-body"><div class="accordion-body-inner">
+    <div id="blend-control" style="display:none;flex-direction:column;gap:6px;padding:10px;border:1px dashed rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.25);border-radius:8px;background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.03)">
+      <div style="font-size:11px;font-weight:700;color:var(--ACCENT);letter-spacing:2px">文字对比度增强</div>
+      <div class="blend-slider-row"><span>背景对比度</span><input type="range" id="blend-contrast" min="50" max="200" value="100" oninput="adjustBlendContrast(this.value)"><span id="blend-contrast-val">100%</span></div>
+      <div class="blend-slider-row"><span>背景亮度</span><input type="range" id="blend-brightness" min="50" max="150" value="100" oninput="adjustBlendBrightness(this.value)"><span id="blend-brightness-val">100%</span></div>
+      <div class="blend-slider-row"><span>背景饱和度</span><input type="range" id="blend-saturate" min="0" max="200" value="80" oninput="adjustBlendSaturate(this.value)"><span id="blend-saturate-val">80%</span></div>
+      <div style="border-top:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);margin:2px 0"></div>
+      <div class="blend-slider-row"><span>柔光叠加</span><input type="range" id="blend-softlight" min="0" max="100" value="20" oninput="adjustBlendSoftlight(this.value)"><span id="blend-softlight-val">20%</span></div>
+      <div class="blend-slider-row"><span>LOGO区保护</span><input type="range" id="blend-logo-guard" min="0" max="100" value="0" oninput="adjustBlendLogoGuard(this.value)"><span id="blend-logo-guard-val">0%</span></div>
+      <div class="blend-slider-row"><span>变暗叠加</span><input type="range" id="blend-darken" min="0" max="100" value="0" oninput="adjustBlendMode('darken',this.value)"><span id="blend-darken-val">0%</span></div>
+      <div class="blend-slider-row"><span>变亮叠加</span><input type="range" id="blend-lighten" min="0" max="100" value="0" oninput="adjustBlendMode('lighten',this.value)"><span id="blend-lighten-val">0%</span></div>
+      <div class="blend-slider-row"><span>正片叠底</span><input type="range" id="blend-multiply" min="0" max="100" value="0" oninput="adjustBlendMode('multiply',this.value)"><span id="blend-multiply-val">0%</span></div>
+      <div class="blend-slider-row"><span>颜色混合</span><input type="range" id="blend-color" min="0" max="100" value="0" oninput="adjustBlendMode('color',this.value)"><span id="blend-color-val">0%</span></div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px"><button onclick="applyBlendPreset('clear')">清 晰</button><button onclick="applyBlendPreset('dark')">深 邃</button><button onclick="applyBlendPreset('soft')">柔 和</button><button onclick="applyBlendPreset('vivid')">鲜 明</button><button onclick="applyBlendPreset('warm')">暖 调</button><button onclick="applyBlendPreset('reset')">↺ 重置</button></div>
+    </div>
+      </div></div>
+    </div>
+    <!-- 风格微调 -->
+    <div class="accordion-section open">
+      <div class="accordion-header" onclick="toggleAccordion(this)"><span>✏️ 风格微调</span><span class="accordion-arrow">▸</span></div>
+      <div class="accordion-body"><div class="accordion-body-inner">
+    <div id="fine-tune-control" style="display:flex;flex-direction:column;gap:5px;padding:10px;border:1px dashed rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.25);border-radius:8px;background:rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.03)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;font-weight:700;color:var(--ACCENT);letter-spacing:2px">风格微调</div>
+        <button onclick="resetFineTune()" style="padding:3px 10px;font-size:9px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:4px;background:var(--MODE_CARD_BG);cursor:pointer;color:var(--ACCENT);letter-spacing:.5px;transition:all 0.2s">↺ 重置</button>
+      </div>
+      <!-- v18.0: 字体设置无默认值，仅当用户输入后应用 -->
+      <div style="font-size:9px;font-weight:600;color:var(--ACCENT);opacity:.55;letter-spacing:1.5px;padding-top:2px">字体设置</div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">标题/副标题</span><input type="text" id="title-font-input" placeholder="输入字体名称（可选）" value="" onkeydown="if(event.key==='Enter')applyTitleFont()" style="flex:1;padding:4px 8px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.25);border-radius:4px;background:var(--MODE_CARD_BG);color:var(--MODE_TEXT);font-size:10px;outline:none"><button onclick="applyTitleFont()" style="padding:3px 8px;font-size:9px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:4px;background:var(--ACCENT);color:#fff;cursor:pointer;letter-spacing:.5px;white-space:nowrap">应用</button></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">其他内容</span><input type="text" id="content-font-input" placeholder="输入字体名称（可选）" value="" onkeydown="if(event.key==='Enter')applyContentFont()" style="flex:1;padding:4px 8px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.25);border-radius:4px;background:var(--MODE_CARD_BG);color:var(--MODE_TEXT);font-size:10px;outline:none"><button onclick="applyContentFont()" style="padding:3px 8px;font-size:9px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:4px;background:var(--ACCENT);color:#fff;cursor:pointer;letter-spacing:.5px;white-space:nowrap">应用</button></div>
+      <div style="border-top:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);margin:2px 0"></div>
+      <div class="sub-accordion-section open">
+        <div class="sub-accordion-header" onclick="toggleSubAccordion(this)"><span class="sub-accordion-arrow">▸</span>标题 (字重/字间距/字号)</div>
+        <div class="sub-accordion-body">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字重</span><input type="range" id="title-weight-slider" min="400" max="900" value="900" step="100" oninput="adjustTitleWeight(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="title-weight-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">900</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字间距</span><input type="range" id="letter-spacing-slider" min="0" max="20" value="6" oninput="adjustLetterSpacing(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="letter-spacing-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">6px</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字号</span><input type="range" id="title-font-size-slider" min="24" max="72" value="56" step="2" oninput="adjustTitleFontSize(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="title-font-size-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">56</span></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);margin:2px 0"></div>
+      <div class="sub-accordion-section">
+        <div class="sub-accordion-header" onclick="toggleSubAccordion(this)"><span class="sub-accordion-arrow">▸</span>副标题 (字重/字间距/行间距/字号)</div>
+        <div class="sub-accordion-body">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字重</span><input type="range" id="subtitle-weight-slider" min="200" max="700" value="300" step="100" oninput="adjustSubtitleWeight(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="subtitle-weight-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">300</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字间距</span><input type="range" id="subtitle-letter-spacing-slider" min="0" max="15" value="3" step="0.5" oninput="adjustSubtitleLetterSpacing(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="subtitle-letter-spacing-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">3.0</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">行间距</span><input type="range" id="subtitle-line-height-slider" min="1.0" max="3.0" value="1.6" step="0.05" oninput="adjustSubtitleLineHeight(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="subtitle-line-height-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">1.60</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字号</span><input type="range" id="subtitle-font-size-slider" min="12" max="36" value="22" step="1" oninput="adjustSubtitleFontSize(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="subtitle-font-size-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">22</span></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);margin:2px 0"></div>
+      <div class="sub-accordion-section">
+        <div class="sub-accordion-header" onclick="toggleSubAccordion(this)"><span class="sub-accordion-arrow">▸</span>其他内容 (字重/字间距/行间距/字号/对齐)</div>
+        <div class="sub-accordion-body">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字重</span><input type="range" id="content-weight-slider" min="200" max="700" value="300" step="100" oninput="adjustContentWeight(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="content-weight-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">300</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字间距</span><input type="range" id="content-letter-spacing-slider" min="0" max="10" value="1.5" step="0.5" oninput="adjustContentLetterSpacing(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="content-letter-spacing-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">1.5</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">行间距</span><input type="range" id="content-line-height-slider" min="1.0" max="3.0" value="1.7" step="0.05" oninput="adjustContentLineHeight(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="content-line-height-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">1.70</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字号</span><input type="range" id="content-font-size-slider" min="8" max="20" value="13" step="0.5" oninput="adjustContentFontSize(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="content-font-size-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">13</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">上间距</span><input type="range" id="content-margin-top-slider" min="0" max="60" value="8" step="2" oninput="adjustContentMarginTop(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="content-margin-top-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">8px</span></div>
+      <div class="option-row" id="content-align-options">
+        <div class="option-card" data-align="left" onclick="switchContentAlign(this,'left')"><div class="option-title">左对齐</div></div>
+        <div class="option-card selected" data-align="center" onclick="switchContentAlign(this,'center')"><div class="option-title">居中</div></div>
+        <div class="option-card" data-align="right" onclick="switchContentAlign(this,'right')"><div class="option-title">右对齐</div></div>
+        <div class="option-card" data-align="justify" onclick="switchContentAlign(this,'justify')"><div class="option-title">两端对齐</div></div>
+      </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.08);margin:2px 0"></div>
+      <div class="sub-accordion-section">
+        <div class="sub-accordion-header" onclick="toggleSubAccordion(this)"><span class="sub-accordion-arrow">▸</span>标签 (字重/字间距/字号/位置)</div>
+        <div class="sub-accordion-body">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字重</span><input type="range" id="tag-weight-slider" min="200" max="700" value="400" step="100" oninput="adjustTagWeight(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="tag-weight-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">400</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字间距</span><input type="range" id="tag-letter-spacing-slider" min="0" max="15" value="3" step="0.5" oninput="adjustTagLetterSpacing(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="tag-letter-spacing-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">3.0</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">字号</span><input type="range" id="tag-size-slider" min="8" max="18" value="11" step="0.5" oninput="adjustTagSize(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="tag-size-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">11</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">间距</span><input type="range" id="tag-gap-slider" min="4" max="30" value="12" step="1" oninput="adjustTagGap(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="tag-gap-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">12</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">水平偏移</span><input type="range" id="tag-offset-slider" min="-120" max="120" value="0" step="2" oninput="adjustTagOffset(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="tag-offset-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">0px</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;color:var(--ACCENT);letter-spacing:1px;white-space:nowrap;min-width:48px">垂直偏移</span><input type="range" id="tag-offset-y-slider" min="-200" max="80" value="0" step="2" oninput="adjustTagOffsetY(this.value)" style="flex:1;accent-color:var(--ACCENT)"><span id="tag-offset-y-value" style="font-size:10px;color:var(--ACCENT);font-weight:700;min-width:32px">0px</span></div>
+        </div>
+      </div>
+    </div>
+      </div></div>
+    </div>
+    <!-- LOGO 设置（v27.0 恢复：手动上传+布局设置，无自动配色） -->
+    <div class="accordion-section">
+      <div class="accordion-header" onclick="toggleAccordion(this)"><span>🏷 LOGO 设置</span><span class="accordion-arrow">▸</span></div>
+      <div class="accordion-body"><div class="accordion-body-inner">
+    <div class="step-label">LOGO 显示</div>
+    <div class="option-row" id="logo-options">
+      <div class="option-card selected" data-logo="show" onclick="selectLogo(this,'show')"><div class="option-icon">👁</div><div class="option-title">显示 LOGO</div></div>
+      <div class="option-card" data-logo="hide" onclick="selectLogo(this,'hide')"><div class="option-icon">🚫</div><div class="option-title">隐藏 LOGO</div></div>
+    </div>
+    <div class="step-label" style="margin-top:4px">LOGO 位置</div>
+    <div class="option-row" id="logo-layout-options">
+      <div class="option-card selected" data-layout="bottom-right" onclick="switchLogoLayout(this,'bottom-right')"><div class="option-icon">↘️</div><div class="option-title">右下角</div></div>
+      <div class="option-card" data-layout="bottom-left" onclick="switchLogoLayout(this,'bottom-left')"><div class="option-icon">↙️</div><div class="option-title">左下角</div></div>
+      <div class="option-card" data-layout="bottom-center" onclick="switchLogoLayout(this,'bottom-center')"><div class="option-icon">⬇️</div><div class="option-title">底部居中</div></div>
+      <div class="option-card" data-layout="top-center" onclick="switchLogoLayout(this,'top-center')"><div class="option-icon">⬆️</div><div class="option-title">顶部居中</div></div>
+    </div>
+    <div class="step-label" style="margin-top:4px">自定义 LOGO</div>
+    <label class="upload-label" style="justify-content:center;cursor:pointer"><i class="fa-solid fa-upload"></i> 点击上传自定义 LOGO<input type="file" accept="image/*" onchange="handleLogoUpload(this.files[0])" style="display:none"></label>
+    <button onclick="resetLogo()" style="margin-top:4px;width:100%;padding:6px 10px;font-size:10px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:4px;background:var(--MODE_CARD_BG);cursor:pointer;color:var(--ACCENT);letter-spacing:1px;transition:all 0.2s">↺ 恢复默认 LOGO</button>
+      </div></div>
+    </div>
+    <!-- 水印设置 -->
+    <div class="accordion-section">
+      <div class="accordion-header" onclick="toggleAccordion(this)"><span>💧 水印设置</span><span class="accordion-arrow">▸</span></div>
+      <div class="accordion-body"><div class="accordion-body-inner">
+    <div class="step-label" style="margin-top:4px">水印平铺</div>
+    <div class="option-row" id="watermark-toggle-options">
+      <div class="option-card selected" data-wm="off" onclick="toggleWatermark(this,'off')"><div class="option-icon">🚫</div><div class="option-title">关闭水印</div></div>
+      <div class="option-card" data-wm="on" onclick="toggleWatermark(this,'on')"><div class="option-icon">💧</div><div class="option-title">开启水印</div></div>
+    </div>
+    <div id="watermark-control">
+      <div style="font-size:11px;font-weight:700;color:var(--ACCENT);letter-spacing:2px">水印参数</div>
+      <div class="blend-slider-row"><span>水印数量</span><input type="range" id="watermark-count-slider" min="1" max="16" value="1" oninput="adjustWatermarkCount(this.value)"><span id="watermark-count-value">1</span></div>
+      <div class="blend-slider-row"><span>排列列数</span><input type="range" id="watermark-cols-slider" min="1" max="5" value="1" oninput="adjustWatermarkCols(this.value)"><span id="watermark-cols-value">1</span></div>
+      <div class="blend-slider-row"><span>水印间距</span><input type="range" id="watermark-gap-slider" min="0" max="200" value="80" oninput="adjustWatermarkGap(this.value)"><span id="watermark-gap-value">80px</span></div>
+      <div class="blend-slider-row"><span>水印尺寸</span><input type="range" id="watermark-size-slider" min="50" max="300" value="200" oninput="adjustWatermarkSize(this.value)"><span id="watermark-size-value">200px</span></div>
+      <div class="blend-slider-row"><span>旋转角度</span><input type="range" id="watermark-rotate-slider" min="-45" max="45" value="0" oninput="adjustWatermarkRotate(this.value)"><span id="watermark-rotate-value">0°</span></div>
+      <div class="blend-slider-row"><span>水印透明度</span><input type="range" id="watermark-opacity-slider" min="1" max="15" value="3" oninput="adjustWatermarkOpacity(this.value)"><span id="watermark-opacity-value">3%</span></div>
+    </div>
+      </div></div>
+    </div>
+    <!-- 导出区域 -->
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <button onclick="saveCustomPreset()" style="flex:1;padding:8px 10px;font-size:10px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:6px;background:var(--MODE_CARD_BG);cursor:pointer;color:var(--ACCENT);letter-spacing:1px;transition:all 0.2s">💾 保存当前预设</button>
+      <button onclick="loadCustomPreset()" style="flex:1;padding:8px 10px;font-size:10px;border:1px solid rgba(var(--ACCENT_R),var(--ACCENT_G),var(--ACCENT_B),0.3);border-radius:6px;background:var(--MODE_CARD_BG);cursor:pointer;color:var(--ACCENT);letter-spacing:1px;transition:all 0.2s">📂 加载我的预设</button>
+    </div>
+    <div class="step-label" style="margin-top:4px">导出格式</div>
+    <div class="option-row" id="format-options">
+      <div class="option-card selected" data-format="png" onclick="switchExportFormat(this,'png')"><div class="option-icon">🖼</div><div class="option-title">PNG</div><div class="option-desc">无损</div></div>
+      <div class="option-card" data-format="jpg" onclick="switchExportFormat(this,'jpg')"><div class="option-icon">📷</div><div class="option-title">JPG</div><div class="option-desc">95%</div></div>
+      <div class="option-card" data-format="webp" onclick="switchExportFormat(this,'webp')"><div class="option-icon">🌐</div><div class="option-title">WebP</div><div class="option-desc">92%</div></div>
+    </div>
+  </div>
+  <button class="export-btn" onclick="exportPNG()"><i class="fa-solid fa-download"></i> 导出 PNG</button>
+  <div class="shortcut-hint" style="margin-top:8px;font-size:10px;color:var(--MODE_TEXT);opacity:.5;text-align:center;letter-spacing:1px">
+    <span>Ctrl+E 导出</span>&nbsp;·&nbsp;<span>Ctrl+S 保存预设</span>&nbsp;·&nbsp;<span>1-5 切换尺寸</span>
+  </div>
+  <div class="exporting-toast" id="toast">正在导出...</div>
+</div>
+
+<div class="layout-right">
+  <div id="cover-canvas">
+    <div class="bg-filter-wrap"><img class="bg-image-layer" src="" alt=""></div>
+    <div class="bg-overlay"></div>
+    <div class="blend-softlight"></div>
+    <div class="blend-logo-guard"></div>
+    <!-- INJECT_CANVAS_CONTENT -->
+    <img class="logo-preview" src="" alt="" style="right:40px;bottom:36px;width:50px;height:50px">
+    <img class="logo-export" src="" alt="" style="right:40px;bottom:36px;width:50px;height:50px">
+    <img class="logo-upload-preview" src="" alt="" style="right:40px;bottom:36px;width:50px;height:50px">
+  </div>
+</div>
+
+<script>
+// ====== FRAMEWORK JS (compact, v18.0) ======
+const logoPreview = document.querySelector('.logo-preview'), logoExport = document.querySelector('.logo-export'), logoUploadPreview = document.querySelector('.logo-upload-preview'), blendLogoGuard = document.querySelector('.blend-logo-guard'), blendSoftlight = document.querySelector('.blend-softlight'), bgImage = document.querySelector('.bg-image-layer'), bgFilterWrap = document.querySelector('.bg-filter-wrap'), bgOverlay = document.querySelector('.bg-overlay'), coverCanvas = document.getElementById('cover-canvas'), toastEl = document.getElementById('toast'), contentLayer = document.querySelector('.content-layer'), bottomRow = document.querySelector('.bottom-row'), mainTitle = document.querySelector('.main-title'), subtitle = document.querySelector('.subtitle'), metaTags = document.querySelector('.meta-tags');
+let isCustomLogo = false, customLogoDataUrl = null, titleFontSizeUserSet = false, currentBgSource = 'none';
+function getCssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function showToast(m, d) { if (!toastEl) return; toastEl.style.display = 'block'; toastEl.textContent = m; if (d > 0) { clearTimeout(window._toastTimer); window._toastTimer = setTimeout(function() { toastEl.style.display = 'none'; }, d); } }
+
+function setBgImage(s) { bgImage.src = s; bgFilterWrap.style.display = 'block'; bgOverlay.style.display = 'block'; applyBgTransform(); }
+function switchToBgSource(s) { currentBgSource = s; document.querySelectorAll('#bg-options .option-card').forEach(c => c.classList.remove('selected')); var c = document.querySelector('#bg-options .option-card[data-bg="' + s + '"]'); if (c) c.classList.add('selected'); document.getElementById('upload-bg-area').style.display = 'none'; document.getElementById('clipboard-bg-area').style.display = (s === 'clipboard') ? 'block' : 'none'; if (s !== 'none') { showBlendLayers(); var sc = document.getElementById('bg-scale-control'), oc = document.getElementById('bg-opacity-control'), tc = document.getElementById('bg-transparency-control'), bc = document.getElementById('blend-control'); if (sc) sc.style.display = 'flex'; if (oc) oc.style.display = 'flex'; if (tc) tc.style.display = 'flex'; if (bc) bc.style.display = 'flex'; autoExpandBgAdjust(); } }
+var currentAnchor = 'tl', currentScale = 100;
+var anchorMap = { tl: { transform: function(s) { bgImage.style.top = '0'; bgImage.style.left = '0'; bgImage.style.right = 'auto'; bgImage.style.bottom = 'auto'; bgImage.style.transform = 'scale(' + s + ')'; bgImage.style.transformOrigin = 'top left'; } }, tr: { transform: function(s) { bgImage.style.top = '0'; bgImage.style.right = '0'; bgImage.style.left = 'auto'; bgImage.style.bottom = 'auto'; bgImage.style.transform = 'scale(' + s + ')'; bgImage.style.transformOrigin = 'top right'; } }, bl: { transform: function(s) { bgImage.style.bottom = '0'; bgImage.style.left = '0'; bgImage.style.top = 'auto'; bgImage.style.right = 'auto'; bgImage.style.transform = 'scale(' + s + ')'; bgImage.style.transformOrigin = 'bottom left'; } }, br: { transform: function(s) { bgImage.style.bottom = '0'; bgImage.style.right = '0'; bgImage.style.top = 'auto'; bgImage.style.left = 'auto'; bgImage.style.transform = 'scale(' + s + ')'; bgImage.style.transformOrigin = 'bottom right'; } }, cc: { transform: function(s) { bgImage.style.top = '50%'; bgImage.style.left = '50%'; bgImage.style.right = 'auto'; bgImage.style.bottom = 'auto'; bgImage.style.transform = 'translate(-50%,-50%) scale(' + s + ')'; bgImage.style.transformOrigin = 'center center'; } }, tc: { transform: function(s) { bgImage.style.top = '0'; bgImage.style.left = '50%'; bgImage.style.right = 'auto'; bgImage.style.bottom = 'auto'; bgImage.style.transform = 'translateX(-50%) scale(' + s + ')'; bgImage.style.transformOrigin = 'top center'; } } };
+function selectAnchor(b, a) { currentAnchor = a; document.querySelectorAll('#anchor-options .anchor-btn').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); applyBgTransform(); }
+function adjustBgScale(v) { currentScale = parseInt(v); document.getElementById('bg-scale-value').textContent = v + '%'; applyBgTransform(); }
+function applyBgTransform() { var s = currentScale / 100, h = anchorMap[currentAnchor]; if (h) h.transform(s); }
+function adjustBgOpacity(v) { document.querySelector('.bg-filter-wrap').style.opacity = v / 100; document.getElementById('bg-opacity-value').textContent = v + '%'; }
+function adjustBgTransparency(v) { if (bgImage) bgImage.style.opacity = v / 100; document.getElementById('bg-transparency-value').textContent = v + '%'; }
+function resetBgAdjust() { currentScale = 100; var sc = document.getElementById('bg-scale-slider'); if (sc) sc.value = 100; var sv = document.getElementById('bg-scale-value'); if (sv) sv.textContent = '100%'; currentAnchor = 'tl'; document.querySelectorAll('#anchor-options .anchor-btn').forEach(function(a) { a.classList.remove('selected'); }); var tl = document.querySelector('#anchor-options .anchor-btn[data-anchor="tl"]'); if (tl) tl.classList.add('selected'); applyBgTransform(); var op = document.getElementById('bg-opacity-slider'); if (op) op.value = 25; var ov = document.getElementById('bg-opacity-value'); if (ov) ov.textContent = '25%'; adjustBgOpacity(25); var tp = document.getElementById('bg-transparency-slider'); if (tp) tp.value = 100; var tv = document.getElementById('bg-transparency-value'); if (tv) tv.textContent = '100%'; adjustBgTransparency(100); showToast('\u80CC\u666F\u8C03\u6574\u5DF2\u91CD\u7F6E', 1500); }
+function getOrCreateBlendLayer(m) { var id = 'blend-layer-' + m, l = document.getElementById(id); if (!l) { l = document.createElement('div'); l.id = id; l.style.cssText = 'position:absolute;inset:0;z-index:1;pointer-events:none;display:none;'; l.style.mixBlendMode = m; var r = getCssVar('--BG_R'), g = getCssVar('--BG_G'), b = getCssVar('--BG_B'); l.style.background = 'rgba(' + r + ',' + g + ',' + b + ',0.3)'; coverCanvas.appendChild(l); } return l; }
+function adjustBlendMode(m, v) { document.getElementById('blend-' + m + '-val').textContent = v + '%'; var l = getOrCreateBlendLayer(m); if (v > 0) { l.style.display = 'block'; l.style.opacity = v / 100; } else { l.style.display = 'none'; } }
+function applyBgFilters() { var c = document.getElementById('blend-contrast').value, b = document.getElementById('blend-brightness').value, s = document.getElementById('blend-saturate').value; document.querySelector('.bg-filter-wrap').style.filter = 'contrast(' + (c/100) + ') brightness(' + (b/100) + ') saturate(' + (s/100) + ')'; }
+function adjustBlendContrast(v) { document.getElementById('blend-contrast-val').textContent = v + '%'; applyBgFilters(); }
+function adjustBlendBrightness(v) { document.getElementById('blend-brightness-val').textContent = v + '%'; applyBgFilters(); }
+function adjustBlendSaturate(v) { document.getElementById('blend-saturate-val').textContent = v + '%'; applyBgFilters(); }
+function adjustBlendSoftlight(v) { document.getElementById('blend-softlight-val').textContent = v + '%'; var i = v / 100, r = getCssVar('--TEXT_R'), g = getCssVar('--TEXT_G'), b = getCssVar('--TEXT_B'); if (blendSoftlight) { blendSoftlight.style.background = 'rgba(' + r + ',' + g + ',' + b + ',' + (i * 0.15).toFixed(2) + ')'; blendSoftlight.style.opacity = i; } }
+function showBlendLayers() { if (blendLogoGuard) blendLogoGuard.style.display = 'block'; if (blendSoftlight) blendSoftlight.style.display = 'block'; document.getElementById('blend-control').style.display = 'flex'; autoExpandBlend(); }
+function hideAllBlendLayers() { if (blendLogoGuard) blendLogoGuard.style.display = 'none'; if (blendSoftlight) blendSoftlight.style.display = 'none'; ['darken','lighten','multiply','color'].forEach(function(m) { var l = document.getElementById('blend-layer-' + m); if (l) l.style.display = 'none'; }); document.getElementById('blend-control').style.display = 'none'; }
+function applyBlendPreset(p) { var ps = { clear: {contrast:110,brightness:105,saturate:70,logoGuard:60,softlight:15,darken:0,lighten:5,multiply:0,color:0}, dark: {contrast:150,brightness:70,saturate:40,logoGuard:70,softlight:30,darken:20,lighten:0,multiply:10,color:0}, soft: {contrast:90,brightness:110,saturate:90,logoGuard:30,softlight:10,darken:0,lighten:10,multiply:0,color:0}, vivid: {contrast:130,brightness:100,saturate:150,logoGuard:55,softlight:20,darken:0,lighten:0,multiply:0,color:5}, warm: {contrast:105,brightness:95,saturate:120,logoGuard:50,softlight:15,darken:0,lighten:0,multiply:5,color:10}, reset: {contrast:100,brightness:100,saturate:80,logoGuard:0,softlight:20,darken:0,lighten:0,multiply:0,color:0} }; var v = ps[p]; if (!v) return; ['contrast','brightness','saturate','logoGuard','softlight','darken','lighten','multiply','color'].forEach(function(k) { var s = document.getElementById('blend-' + k), e = document.getElementById('blend-' + k + '-val'); if (s) s.value = v[k]; if (e) e.textContent = v[k] + '%'; }); applyBgFilters(); adjustBlendLogoGuard(v.logoGuard); adjustBlendSoftlight(v.softlight); adjustBlendMode('darken', v.darken); adjustBlendMode('lighten', v.lighten); adjustBlendMode('multiply', v.multiply); adjustBlendMode('color', v.color); }
+function selectBg(b, t) { currentBgSource = t; document.querySelectorAll('#bg-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected'); var u = document.getElementById('upload-bg-area'), ca = document.getElementById('clipboard-bg-area'), sc = document.getElementById('bg-scale-control'), oc = document.getElementById('bg-opacity-control'), tc = document.getElementById('bg-transparency-control'), bc = document.getElementById('blend-control'); if (t === 'upload') { u.style.display = 'block'; ca.style.display = 'none'; } else if (t === 'clipboard') { ca.style.display = 'block'; u.style.display = 'none'; } else { u.style.display = 'none'; ca.style.display = 'none'; } if (t === 'none') { hideAllBlendLayers(); if (sc) sc.style.display = 'none'; if (oc) oc.style.display = 'none'; if (tc) tc.style.display = 'none'; if (bc) bc.style.display = 'none'; if (bgImage) bgImage.src = ''; if (bgFilterWrap) bgFilterWrap.style.display = 'none'; if (bgOverlay) bgOverlay.style.display = 'none'; } else { showBlendLayers(); if (sc) sc.style.display = 'flex'; if (oc) oc.style.display = 'flex'; if (tc) tc.style.display = 'flex'; if (bc) bc.style.display = 'flex'; } if (t !== 'none') { autoExpandBgAdjust(); } }
+function handleBgUpload(f) { if (!f) return; var r = new FileReader(); r.onload = function(e) { setBgImage(e.target.result); switchToBgSource('upload'); }; r.readAsDataURL(f); }
+function _clipboardHasImage(dt) { if (!dt) return false; var ts = dt.types || []; for (var i = 0; i < ts.length; i++) { if (ts[i].indexOf('image') !== -1) return true; } var items = dt.items || []; for (var i = 0; i < items.length; i++) { if ((items[i].type||'').indexOf('image') !== -1 || items[i].kind === 'file') return true; } return false; }
+function _pasteImageFromItem(it, e) { if (!it) return; e && e.preventDefault(); var b = it.getAsFile(); if (!b) return; var r = new FileReader(); r.onload = function(ev) { setBgImage(ev.target.result); switchToBgSource('clipboard'); showBlendLayers(); showToast('\u622A\u56FE\u5DF2\u7C98\u8D34\uFF01', 2000); }; r.readAsDataURL(b); }
+function handleClipboardPaste(e) { if (currentBgSource !== 'clipboard') return; var dt = e.clipboardData; if (!dt) return; if (!_clipboardHasImage(dt)) { showToast('\u526A\u8D34\u677F\u4E2D\u65E0\u56FE\u7247\uFF0C\u8BF7\u5148\u622A\u56FE\u6216\u590D\u5236\u56FE\u7247', 2500); return; } var items = dt.items || []; for (var i = 0; i < items.length; i++) { var it = items[i]; if ((it.type||'').indexOf('image') !== -1 || it.kind === 'file') { _pasteImageFromItem(it, e); return; } } for (var i = 0; i < items.length; i++) { var fb = items[i].getAsFile(); if (fb && (fb.type||'').indexOf('image') !== -1) { _pasteImageFromItem(items[i], e); return; } } }
+document.addEventListener('paste', handleClipboardPaste);
+var watermarkGridElements = [];
+function adjustWatermarkCount(v) { document.getElementById('watermark-count-value').textContent = v; applyWatermarkGrid(); }
+function adjustWatermarkCols(v) { document.getElementById('watermark-cols-value').textContent = v; applyWatermarkGrid(); }
+function adjustWatermarkGap(v) { document.getElementById('watermark-gap-value').textContent = v + 'px'; applyWatermarkGrid(); }
+function adjustWatermarkSize(v) { document.getElementById('watermark-size-value').textContent = v + 'px'; updateWatermarkGridStyle(); }
+function adjustWatermarkRotate(v) { document.getElementById('watermark-rotate-value').textContent = v + '\u00B0'; updateWatermarkGridStyle(); }
+function adjustWatermarkOpacity(v) { document.getElementById('watermark-opacity-value').textContent = v + '%'; updateWatermarkGridStyle(); }
+var wmDefaultSrc = '', wmCustomSrc = '';
+function applyWatermarkGrid() { clearWatermarkGrid(); var c = parseInt(document.getElementById('watermark-count-slider').value) || 1, cols = parseInt(document.getElementById('watermark-cols-slider').value) || 1, gap = parseInt(document.getElementById('watermark-gap-slider').value) || 80, sz = parseInt(document.getElementById('watermark-size-slider').value) || 200, rot = parseInt(document.getElementById('watermark-rotate-slider').value) || 0, op = parseInt(document.getElementById('watermark-opacity-slider').value) / 100 || 0.03, cW = coverCanvas.clientWidth, cH = coverCanvas.clientHeight, rows = Math.ceil(c / cols), tw = cols * sz + (cols - 1) * gap, th = rows * sz + (rows - 1) * gap, sX = (cW - tw) / 2, sY = (cH - th) / 2, src = isCustomLogo && customLogoDataUrl ? customLogoDataUrl : wmDefaultSrc; for (var i = 0; i < c; i++) { var row = Math.floor(i / cols), col = i % cols, x = sX + col * (sz + gap), y = sY + row * (sz + gap), el = document.createElement('img'); el.className = 'watermark-grid-item'; el.src = src; el.style.cssText = 'position:absolute;z-index:1;pointer-events:none;object-fit:contain;left:' + x + 'px;top:' + y + 'px;width:' + sz + 'px;height:' + sz + 'px;opacity:' + op + ';transform:rotate(' + rot + 'deg);transform-origin:center center;'; coverCanvas.appendChild(el); watermarkGridElements.push(el); } }
+function updateWatermarkGridStyle() { if (watermarkGridElements.length === 0) return; var sz = parseInt(document.getElementById('watermark-size-slider').value) || 200, rot = parseInt(document.getElementById('watermark-rotate-slider').value) || 0, op = parseInt(document.getElementById('watermark-opacity-slider').value) / 100 || 0.03; watermarkGridElements.forEach(function(el) { el.style.width = sz + 'px'; el.style.height = sz + 'px'; el.style.opacity = op; el.style.transform = 'rotate(' + rot + 'deg)'; }); }
+function clearWatermarkGrid() { watermarkGridElements.forEach(function(el) { el.remove(); }); watermarkGridElements = []; }
+function showWatermarkControls() { var w = document.getElementById('watermark-control'); if (w) w.style.display = 'flex'; }
+function hideWatermarkControls() { var w = document.getElementById('watermark-control'); if (w) w.style.display = 'none'; clearWatermarkGrid(); }
+var currentCanvasSize = '3-4', canvasSizes = { '3-4': { width: 540, height: 720 }, '1-1': { width: 600, height: 600 }, '9-16': { width: 540, height: 960 }, '4-3': { width: 720, height: 540 }, '16-9': { width: 960, height: 540 } };
+function switchCanvasSize(b, s) { currentCanvasSize = s; titleFontSizeUserSet = false; document.querySelectorAll('#size-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected'); var d = canvasSizes[s]; coverCanvas.style.width = d.width + 'px'; coverCanvas.style.height = d.height + 'px'; if (contentLayer) { if (s === '1-1') contentLayer.style.padding = '60px 80px 56px 80px'; else if (s === '9-16') contentLayer.style.padding = '56px 72px 48px 72px'; else if (s === '4-3') contentLayer.style.padding = '40px 88px 32px 88px'; else if (s === '16-9') contentLayer.style.padding = '48px 100px 36px 100px'; else contentLayer.style.padding = '56px 72px 48px 72px'; } autoFitTitleSize(); repositionDecorElements(); adjustBottomRowSpacing(); }
+function autoFitTitleSize() { var m = mainTitle || document.querySelector('.main-title'); if (!m || titleFontSizeUserSet) return; var t = m.textContent.replace(/[\u300A\u300B\u300C\u300D\u201C\u201D\u2018\u2019\s]/g, ''), len = t.length, bs = parseInt(getCssVar('--TITLE_SIZE')) || 56, fs; if (len <= 4) fs = bs; else if (len <= 6) fs = Math.max(bs * 0.85, 40); else if (len <= 8) fs = Math.max(bs * 0.72, 32); else fs = Math.max(bs * 0.58, 24); m.style.fontSize = fs + 'px'; }
+function repositionDecorElements() { var d = canvasSizes[currentCanvasSize], dl = document.querySelector('.decor-layer'); if (!dl) return; dl.querySelectorAll('[data-decor-pos]').forEach(function(el) { var p = el.getAttribute('data-decor-pos'); if (p === 'tl') { el.style.top = (d.height * 0.08) + 'px'; el.style.left = (d.width * 0.06) + 'px'; } else if (p === 'tr') { el.style.top = (d.height * 0.1) + 'px'; el.style.right = (d.width * 0.08) + 'px'; } else if (p === 'bl') { el.style.bottom = (d.height * 0.15) + 'px'; el.style.left = (d.width * 0.08) + 'px'; } else if (p === 'br') { el.style.bottom = (d.height * 0.12) + 'px'; el.style.right = (d.width * 0.1) + 'px'; } else if (p === 'center') { el.style.top = '50%'; el.style.left = '50%'; } }); }
+var currentTheme = 'light';
+function switchTheme(b, t) { currentTheme = t; document.querySelectorAll('#theme-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected'); if (t === 'dark') document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode'); }
+var watermarkEnabled = false;
+function toggleWatermark(b, s) { document.querySelectorAll('#watermark-toggle-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected'); if (s === 'on') { watermarkEnabled = true; showWatermarkControls(); applyWatermarkGrid(); } else { watermarkEnabled = false; hideWatermarkControls(); } }
+function adjustBottomRowSpacing() { var br = bottomRow || document.querySelector('.bottom-row'), cl = contentLayer || document.querySelector('.content-layer'); if (!br || !cl) return; var cH = coverCanvas.clientHeight, ch = cl.scrollHeight, ratio = ch / cH; if (ratio < 0.60) { br.style.marginTop = '0'; br.style.paddingBottom = '32px'; if (currentLogoLayout === 'bottom-center') br.style.paddingBottom = '64px'; if (currentLogoLayout === 'bottom-right') br.style.paddingBottom = '40px'; if (currentLogoLayout === 'bottom-left') br.style.paddingBottom = '40px'; } else if (ratio < 0.75) { br.style.marginTop = '0'; br.style.paddingBottom = '16px'; if (currentLogoLayout === 'bottom-center') br.style.paddingBottom = '48px'; if (currentLogoLayout === 'bottom-right') br.style.paddingBottom = '28px'; if (currentLogoLayout === 'bottom-left') br.style.paddingBottom = '28px'; } else { br.style.marginTop = 'auto'; br.style.paddingBottom = '8px'; } }
+var currentExportFormat = 'png';
+function switchExportFormat(b, f) { currentExportFormat = f; document.querySelectorAll('#format-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected'); var eb = document.querySelector('.export-btn'), fl = { png: 'PNG', jpg: 'JPG', webp: 'WebP' }; if (eb) eb.innerHTML = '<i class="fa-solid fa-download"></i> \u5BFC\u51FA ' + fl[f]; }
+function adjustTitleWeight(v) { document.getElementById('title-weight-value').textContent = v; if (mainTitle) mainTitle.style.fontWeight = v; }
+function adjustLetterSpacing(v) { document.getElementById('letter-spacing-value').textContent = v + 'px'; if (mainTitle) mainTitle.style.letterSpacing = v + 'px'; }
+function adjustTitleFontSize(v) { titleFontSizeUserSet = true; document.getElementById('title-font-size-value').textContent = v; var m = mainTitle; if (m) m.style.fontSize = v + 'px'; }
+function applyTitleFont() { var f = document.getElementById('title-font-input').value.trim(); document.querySelectorAll('.main-title, .subtitle').forEach(function(el) { el.style.fontFamily = f ? '"' + f + '", serif' : ''; }); if (f) showToast('\u6807\u9898/\u526F\u6807\u9898\u5B57\u4F53\uFF1A' + f); }
+function applyContentFont() { var f = document.getElementById('content-font-input').value.trim(); document.querySelectorAll('.description, .supplement, .author-line, .meta-tag, .tag-label, .account-name-top').forEach(function(el) { el.style.fontFamily = f ? '"' + f + '", sans-serif' : ''; }); if (f) showToast('\u5176\u4ED6\u5185\u5BB9\u5B57\u4F53\uFF1A' + f); }
+function adjustSubtitleWeight(v) { document.getElementById('subtitle-weight-value').textContent = v; if (subtitle) subtitle.style.fontWeight = v; }
+function adjustSubtitleLetterSpacing(v) { document.getElementById('subtitle-letter-spacing-value').textContent = parseFloat(v).toFixed(1); if (subtitle) subtitle.style.letterSpacing = v + 'px'; }
+function adjustSubtitleLineHeight(v) { document.getElementById('subtitle-line-height-value').textContent = parseFloat(v).toFixed(2); if (subtitle) subtitle.style.lineHeight = v; }
+function adjustSubtitleFontSize(v) { document.getElementById('subtitle-font-size-value').textContent = v; if (subtitle) subtitle.style.fontSize = v + 'px'; }
+function adjustContentWeight(v) { document.getElementById('content-weight-value').textContent = v; document.querySelectorAll('.description, .supplement').forEach(function(el) { el.style.fontWeight = v; }); }
+function adjustContentLetterSpacing(v) { document.getElementById('content-letter-spacing-value').textContent = v; document.querySelectorAll('.description, .supplement').forEach(function(el) { el.style.letterSpacing = v + 'px'; }); }
+function adjustContentLineHeight(v) { document.getElementById('content-line-height-value').textContent = parseFloat(v).toFixed(2); document.querySelectorAll('.description, .supplement').forEach(function(el) { el.style.lineHeight = v; }); }
+function adjustContentFontSize(v) { document.getElementById('content-font-size-value').textContent = parseFloat(v).toFixed(1); document.querySelectorAll('.description, .supplement').forEach(function(el) { el.style.fontSize = v + 'px'; }); }
+function adjustContentMarginTop(v) { document.getElementById('content-margin-top-value').textContent = v + 'px'; document.querySelectorAll('.description, .supplement').forEach(function(el) { el.style.marginTop = v + 'px'; }); }
+function adjustTagWeight(v) { document.getElementById('tag-weight-value').textContent = v; document.querySelectorAll('.meta-tag').forEach(function(el) { el.style.fontWeight = v; }); }
+function adjustTagLetterSpacing(v) { document.getElementById('tag-letter-spacing-value').textContent = parseFloat(v).toFixed(1); document.querySelectorAll('.meta-tag').forEach(function(el) { el.style.letterSpacing = v + 'px'; }); }
+function adjustTagSize(v) { document.getElementById('tag-size-value').textContent = parseFloat(v).toFixed(1); document.querySelectorAll('.meta-tag').forEach(function(el) { el.style.fontSize = v + 'px'; }); var s = document.getElementById('tag-decor-style') || document.createElement('style'); s.id = 'tag-decor-style'; var is = Math.max(4, v * 0.55), pv = Math.max(2, v * 0.55), ph = Math.max(4, v * 1.45); s.textContent = '.meta-tag::before{font-size:' + is.toFixed(1) + 'px}.meta-tag{padding:' + pv.toFixed(1) + 'px ' + ph.toFixed(1) + 'px}'; if (!document.getElementById('tag-decor-style')) document.head.appendChild(s); }
+function adjustTagGap(v) { document.getElementById('tag-gap-value').textContent = v; if (metaTags) metaTags.style.gap = v + 'px'; }
+var currentTagOffset = 0, currentTagOffsetY = 0;
+function adjustTagOffset(v) { currentTagOffset = parseInt(v); document.getElementById('tag-offset-value').textContent = v + 'px'; applyTagTransform(); }
+function adjustTagOffsetY(v) { currentTagOffsetY = parseInt(v); document.getElementById('tag-offset-y-value').textContent = v + 'px'; applyTagTransform(); }
+function applyTagTransform() { if (bottomRow) bottomRow.style.transform = 'translate(' + currentTagOffset + 'px, ' + currentTagOffsetY + 'px)'; }
+var currentContentAlign = 'center';
+function switchContentAlign(b, a) { currentContentAlign = a; document.querySelectorAll('#content-align-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected'); document.querySelectorAll('.description, .supplement').forEach(function(el) { el.style.textAlign = a; }); }
+function _setSlider(i, v, d, dv) { var e = document.getElementById(i); if (e) e.value = v; var de = document.getElementById(d); if (de) de.textContent = dv || v; }
+function _setSliderThen(i, v, d, dv, fn, a) { _setSlider(i, v, d, dv); if (fn) fn(a || v); }
+function resetFineTune() {
+  titleFontSizeUserSet = false;
+  _setSliderThen('title-weight-slider', 900, 'title-weight-value', '900', adjustTitleWeight, 900);
+  _setSliderThen('letter-spacing-slider', 6, 'letter-spacing-value', '6px', adjustLetterSpacing, 6);
+  _setSliderThen('title-font-size-slider', 56, 'title-font-size-value', '56', adjustTitleFontSize, 56);
+  _setSliderThen('subtitle-weight-slider', 300, 'subtitle-weight-value', '300', adjustSubtitleWeight, 300);
+  _setSliderThen('subtitle-letter-spacing-slider', 3, 'subtitle-letter-spacing-value', '3.0', adjustSubtitleLetterSpacing, 3);
+  _setSliderThen('subtitle-line-height-slider', 1.6, 'subtitle-line-height-value', '1.60', adjustSubtitleLineHeight, 1.6);
+  _setSliderThen('subtitle-font-size-slider', 22, 'subtitle-font-size-value', '22', adjustSubtitleFontSize, 22);
+  _setSliderThen('content-weight-slider', 300, 'content-weight-value', '300', adjustContentWeight, 300);
+  _setSliderThen('content-letter-spacing-slider', 1.5, 'content-letter-spacing-value', '1.5', adjustContentLetterSpacing, 1.5);
+  _setSliderThen('content-line-height-slider', 1.7, 'content-line-height-value', '1.70', adjustContentLineHeight, 1.7);
+  _setSliderThen('content-font-size-slider', 13, 'content-font-size-value', '13', adjustContentFontSize, 13);
+  _setSliderThen('content-margin-top-slider', 8, 'content-margin-top-value', '8px', adjustContentMarginTop, 8);
+  _setSliderThen('tag-weight-slider', 400, 'tag-weight-value', '400', adjustTagWeight, 400);
+  _setSliderThen('tag-letter-spacing-slider', 3, 'tag-letter-spacing-value', '3.0', adjustTagLetterSpacing, 3);
+  _setSliderThen('tag-size-slider', 11, 'tag-size-value', '11', adjustTagSize, 11);
+  _setSliderThen('tag-gap-slider', 12, 'tag-gap-value', '12', adjustTagGap, 12);
+  _setSliderThen('tag-offset-slider', 0, 'tag-offset-value', '0px', adjustTagOffset, 0);
+  _setSliderThen('tag-offset-y-slider', 0, 'tag-offset-y-value', '0px', adjustTagOffsetY, 0);
+  // v18.0: 重置时清空字体输入框
+  var tf = document.getElementById('title-font-input'); if (tf) { tf.value = ''; }
+  var cf = document.getElementById('content-font-input'); if (cf) { cf.value = ''; }
+  applyTitleFont(); applyContentFont();
+  document.querySelectorAll('#content-align-options .option-card').forEach(function(c) { c.classList.remove('selected'); });
+  var cc = document.querySelector('#content-align-options .option-card[data-align="center"]'); if (cc) cc.classList.add('selected');
+  switchContentAlign(cc || document.querySelector('#content-align-options .option-card'), 'center');
+  showToast('\u98CE\u683C\u5FAE\u8C03\u5DF2\u91CD\u7F6E', 1500);
+}
+function saveCustomPreset() {
+  var p = { contrast: document.getElementById('blend-contrast').value, brightness: document.getElementById('blend-brightness').value, saturate: document.getElementById('blend-saturate').value, logoGuard: document.getElementById('blend-logo-guard') ? document.getElementById('blend-logo-guard').value : 0, softlight: document.getElementById('blend-softlight').value, darken: document.getElementById('blend-darken').value, lighten: document.getElementById('blend-lighten').value, multiply: document.getElementById('blend-multiply').value, color: document.getElementById('blend-color').value, titleWeight: document.getElementById('title-weight-slider').value, letterSpacing: document.getElementById('letter-spacing-slider').value, titleFontSize: document.getElementById('title-font-size-slider') ? document.getElementById('title-font-size-slider').value : 56, titleFont: document.getElementById('title-font-input') ? document.getElementById('title-font-input').value : '', contentFont: document.getElementById('content-font-input') ? document.getElementById('content-font-input').value : '', subtitleWeight: document.getElementById('subtitle-weight-slider') ? document.getElementById('subtitle-weight-slider').value : 300, subtitleLetterSpacing: document.getElementById('subtitle-letter-spacing-slider') ? document.getElementById('subtitle-letter-spacing-slider').value : 3, subtitleLineHeight: document.getElementById('subtitle-line-height-slider') ? document.getElementById('subtitle-line-height-slider').value : 1.6, subtitleFontSize: document.getElementById('subtitle-font-size-slider') ? document.getElementById('subtitle-font-size-slider').value : 22, contentWeight: document.getElementById('content-weight-slider').value, contentLetterSpacing: document.getElementById('content-letter-spacing-slider') ? document.getElementById('content-letter-spacing-slider').value : 1.5, contentLineHeight: document.getElementById('content-line-height-slider') ? document.getElementById('content-line-height-slider').value : 1.7, contentFontSize: document.getElementById('content-font-size-slider') ? document.getElementById('content-font-size-slider').value : 13, contentMarginTop: document.getElementById('content-margin-top-slider') ? document.getElementById('content-margin-top-slider').value : 8, tagWeight: document.getElementById('tag-weight-slider') ? document.getElementById('tag-weight-slider').value : 400, tagLetterSpacing: document.getElementById('tag-letter-spacing-slider') ? document.getElementById('tag-letter-spacing-slider').value : 3, tagSize: document.getElementById('tag-size-slider') ? document.getElementById('tag-size-slider').value : 11, tagGap: document.getElementById('tag-gap-slider') ? document.getElementById('tag-gap-slider').value : 12, wmCount: document.getElementById('watermark-count-slider') ? document.getElementById('watermark-count-slider').value : 1, wmCols: document.getElementById('watermark-cols-slider') ? document.getElementById('watermark-cols-slider').value : 1, wmGap: document.getElementById('watermark-gap-slider') ? document.getElementById('watermark-gap-slider').value : 80, wmSize: document.getElementById('watermark-size-slider') ? document.getElementById('watermark-size-slider').value : 200, wmRotate: document.getElementById('watermark-rotate-slider') ? document.getElementById('watermark-rotate-slider').value : 0, wmOpacity: document.getElementById('watermark-opacity-slider') ? document.getElementById('watermark-opacity-slider').value : 3, contentAlign: currentContentAlign, tagOffset: currentTagOffset, tagOffsetY: currentTagOffsetY };
+  localStorage.setItem('xiaohongshu-cover-custom-preset', JSON.stringify(p));
+  showToast('\u9884\u8BBE\u5DF2\u4FDD\u5B58\uFF01', 2000);
+}
+function loadCustomPreset() {
+  var s = localStorage.getItem('xiaohongshu-cover-custom-preset'); if (!s) { showToast('\u6682\u65E0\u4FDD\u5B58\u7684\u9884\u8BBE', 2000); return; }
+  var p = JSON.parse(s);
+  ['contrast','brightness','saturate','logoGuard','softlight','darken','lighten','multiply','color'].forEach(function(k) { var sl = document.getElementById('blend-' + k), ve = document.getElementById('blend-' + k + '-val'); if (sl && p[k] !== undefined) sl.value = p[k]; if (ve) ve.textContent = (p[k] || 0) + '%'; });
+  if (p.titleWeight !== undefined) { document.getElementById('title-weight-slider').value = p.titleWeight; document.getElementById('title-weight-value').textContent = p.titleWeight; adjustTitleWeight(p.titleWeight); }
+  if (p.letterSpacing !== undefined) { document.getElementById('letter-spacing-slider').value = p.letterSpacing; document.getElementById('letter-spacing-value').textContent = p.letterSpacing + 'px'; adjustLetterSpacing(p.letterSpacing); }
+  if (p.titleFontSize !== undefined) { var tfs = document.getElementById('title-font-size-slider'); if (tfs) { tfs.value = p.titleFontSize; document.getElementById('title-font-size-value').textContent = p.titleFontSize; adjustTitleFontSize(p.titleFontSize); } }
+  if (p.titleFont !== undefined) { var tf = document.getElementById('title-font-input'); if (tf) { tf.value = p.titleFont; applyTitleFont(); } }
+  if (p.contentFont !== undefined) { var cf = document.getElementById('content-font-input'); if (cf) { cf.value = p.contentFont; applyContentFont(); } }
+  if (p.subtitleWeight !== undefined) { var sw = document.getElementById('subtitle-weight-slider'); if (sw) { sw.value = p.subtitleWeight; document.getElementById('subtitle-weight-value').textContent = p.subtitleWeight; adjustSubtitleWeight(p.subtitleWeight); } }
+  if (p.subtitleLetterSpacing !== undefined) { var sls = document.getElementById('subtitle-letter-spacing-slider'); if (sls) { sls.value = p.subtitleLetterSpacing; document.getElementById('subtitle-letter-spacing-value').textContent = parseFloat(p.subtitleLetterSpacing).toFixed(1); adjustSubtitleLetterSpacing(p.subtitleLetterSpacing); } }
+  if (p.subtitleLineHeight !== undefined) { var slh = document.getElementById('subtitle-line-height-slider'); if (slh) { slh.value = p.subtitleLineHeight; document.getElementById('subtitle-line-height-value').textContent = parseFloat(p.subtitleLineHeight).toFixed(2); adjustSubtitleLineHeight(p.subtitleLineHeight); } }
+  if (p.subtitleFontSize !== undefined) { var sf = document.getElementById('subtitle-font-size-slider'); if (sf) { sf.value = p.subtitleFontSize; document.getElementById('subtitle-font-size-value').textContent = p.subtitleFontSize; adjustSubtitleFontSize(p.subtitleFontSize); } }
+  if (p.contentWeight !== undefined) { document.getElementById('content-weight-slider').value = p.contentWeight; document.getElementById('content-weight-value').textContent = p.contentWeight; adjustContentWeight(p.contentWeight); }
+  if (p.contentLetterSpacing !== undefined) { var cl = document.getElementById('content-letter-spacing-slider'); if (cl) { cl.value = p.contentLetterSpacing; document.getElementById('content-letter-spacing-value').textContent = p.contentLetterSpacing; adjustContentLetterSpacing(p.contentLetterSpacing); } }
+  if (p.contentLineHeight !== undefined) { var clh = document.getElementById('content-line-height-slider'); if (clh) { clh.value = p.contentLineHeight; document.getElementById('content-line-height-value').textContent = parseFloat(p.contentLineHeight).toFixed(2); adjustContentLineHeight(p.contentLineHeight); } }
+  if (p.contentFontSize !== undefined) { var cfs = document.getElementById('content-font-size-slider'); if (cfs) { cfs.value = p.contentFontSize; document.getElementById('content-font-size-value').textContent = parseFloat(p.contentFontSize).toFixed(1); adjustContentFontSize(p.contentFontSize); } }
+  if (p.contentMarginTop !== undefined) { var cmt = document.getElementById('content-margin-top-slider'); if (cmt) { cmt.value = p.contentMarginTop; document.getElementById('content-margin-top-value').textContent = p.contentMarginTop + 'px'; adjustContentMarginTop(p.contentMarginTop); } }
+  if (p.tagWeight !== undefined) { var tw = document.getElementById('tag-weight-slider'); if (tw) { tw.value = p.tagWeight; document.getElementById('tag-weight-value').textContent = p.tagWeight; adjustTagWeight(p.tagWeight); } }
+  if (p.tagLetterSpacing !== undefined) { var tls = document.getElementById('tag-letter-spacing-slider'); if (tls) { tls.value = p.tagLetterSpacing; document.getElementById('tag-letter-spacing-value').textContent = parseFloat(p.tagLetterSpacing).toFixed(1); adjustTagLetterSpacing(p.tagLetterSpacing); } }
+  if (p.tagSize !== undefined) { var ts = document.getElementById('tag-size-slider'); if (ts) { ts.value = p.tagSize; document.getElementById('tag-size-value').textContent = parseFloat(p.tagSize).toFixed(1); adjustTagSize(p.tagSize); } }
+  if (p.tagGap !== undefined) { var tg = document.getElementById('tag-gap-slider'); if (tg) { tg.value = p.tagGap; document.getElementById('tag-gap-value').textContent = p.tagGap; adjustTagGap(p.tagGap); } }
+  if (p.wmCount !== undefined) { var wc = document.getElementById('watermark-count-slider'); if (wc) { wc.value = p.wmCount; adjustWatermarkCount(p.wmCount); } }
+  if (p.wmCols !== undefined) { var wcl = document.getElementById('watermark-cols-slider'); if (wcl) { wcl.value = p.wmCols; adjustWatermarkCols(p.wmCols); } }
+  if (p.wmGap !== undefined) { var wg = document.getElementById('watermark-gap-slider'); if (wg) { wg.value = p.wmGap; adjustWatermarkGap(p.wmGap); } }
+  if (p.wmSize !== undefined) { var ws = document.getElementById('watermark-size-slider'); if (ws) { ws.value = p.wmSize; adjustWatermarkSize(p.wmSize); } }
+  if (p.wmRotate !== undefined) { var wr = document.getElementById('watermark-rotate-slider'); if (wr) { wr.value = p.wmRotate; adjustWatermarkRotate(p.wmRotate); } }
+  if (p.wmOpacity !== undefined) { var wo = document.getElementById('watermark-opacity-slider'); if (wo) { wo.value = p.wmOpacity; adjustWatermarkOpacity(p.wmOpacity); } }
+  if (p.tagOffset !== undefined) { var to = document.getElementById('tag-offset-slider'); if (to) { to.value = p.tagOffset; adjustTagOffset(p.tagOffset); } }
+  if (p.tagOffsetY !== undefined) { var toy = document.getElementById('tag-offset-y-slider'); if (toy) { toy.value = p.tagOffsetY; adjustTagOffsetY(p.tagOffsetY); } }
+  if (p.contentAlign !== undefined) { var ca = document.querySelector('#content-align-options .option-card[data-align="' + p.contentAlign + '"]'); if (ca) switchContentAlign(ca, p.contentAlign); }
+  applyBgFilters(); adjustBlendLogoGuard(p.logoGuard || 0); adjustBlendSoftlight(p.softlight || 20);
+  adjustBlendMode('darken', p.darken || 0); adjustBlendMode('lighten', p.lighten || 0); adjustBlendMode('multiply', p.multiply || 0); adjustBlendMode('color', p.color || 0);
+  showToast('\u9884\u8BBE\u5DF2\u52A0\u8F7D\uFF01', 2000);
+}
+async function exportPNG() {
+  showToast('正在导出...', 0);
+  if (logoPreview && logoExport && logoPreview.style.display !== 'none') { logoPreview.style.display = 'none'; logoExport.style.display = 'block'; if (isCustomLogo && logoUploadPreview) { logoUploadPreview.style.display = 'none'; } }
+  try {
+    var c = await html2canvas(coverCanvas, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: null });
+    var n = new Date(), ts = n.getFullYear() + String(n.getMonth()+1).padStart(2,'0') + String(n.getDate()).padStart(2,'0'), mime, ext;
+    if (currentExportFormat === 'jpg') { mime = 'image/jpeg'; ext = 'jpg'; }
+    else if (currentExportFormat === 'webp') { mime = 'image/webp'; ext = 'webp'; }
+    else { mime = 'image/png'; ext = 'png'; }
+    var q = currentExportFormat === 'jpg' ? 0.95 : (currentExportFormat === 'webp' ? 0.92 : undefined), du = q !== undefined ? c.toDataURL(mime, q) : c.toDataURL(mime), l = document.createElement('a');
+    l.download = '封面-' + (window.EXPORT_TITLE || '分享') + '-' + ts + '.' + ext; l.href = du; l.click();
+    showToast('导出成功！(' + ext.toUpperCase() + ')', 2500);
+  } catch(e) { showToast('导出失败，请重试', 2500); }
+  // v28.1: 无自定义 LOGO 时不恢复显示（避免空 src 渲染破损图片方框）
+  if (logoPreview && logoExport) { if (isCustomLogo && logoUploadPreview) { logoUploadPreview.style.display = 'block'; logoPreview.style.display = 'none'; } else { logoPreview.style.display = 'none'; } logoExport.style.display = 'none'; }
+}
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportPNG(); return; }
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveCustomPreset(); return; }
+  if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { var m = { '1': '3-4', '2': '1-1', '3': '9-16', '4': '4-3', '5': '16-9' }, s = m[e.key]; if (s) { var c = document.querySelector('#size-options .option-card[data-size="' + s + '"]'); if (c) switchCanvasSize(c, s); } }
+});
+function adjustBlendLogoGuard(v) {
+  document.getElementById('blend-logo-guard-val').textContent = v + '%';
+  var i = v / 100, bgR = getCssVar('--BG_R'), bgG = getCssVar('--BG_G'), bgB = getCssVar('--BG_B');
+  if (blendLogoGuard) { blendLogoGuard.style.background = 'rgba(' + bgR + ',' + bgG + ',' + bgB + ',' + (0.05 + i * 0.5).toFixed(2) + ')'; blendLogoGuard.style.opacity = 0.2 + i * 0.8; }
+}
+function toggleAccordion(h) { var s = h.parentElement; if (!s) return; s.classList.toggle('open'); }
+function toggleSubAccordion(h) { var s = h.parentElement; if (!s) return; s.classList.toggle('open'); }
+
+// ====== LOGO TOGGLE ======
+// v28.1: 无自定义 LOGO 时不显示 logo-preview（空 src 导致浏览器渲染破损图片方框）
+function selectLogo(b, action) {
+  document.querySelectorAll('#logo-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected');
+  if (action === 'hide') { if (logoPreview) logoPreview.style.display = 'none'; if (logoExport) logoExport.style.display = 'none'; if (logoUploadPreview) logoUploadPreview.style.display = 'none'; }
+  else { if (isCustomLogo && logoUploadPreview) { logoUploadPreview.style.display = 'block'; if (logoPreview) logoPreview.style.display = 'none'; } else if (logoPreview) { logoPreview.style.display = 'none'; } if (logoExport) logoExport.style.display = 'none'; }
+  syncLogoGuardVisibility();
+}
+
+// ====== CUSTOM LOGO UPLOAD ======
+function handleLogoUpload(file) {
+  if (!file) return; var r = new FileReader();
+  r.onload = function(e) {
+    customLogoDataUrl = e.target.result; isCustomLogo = true;
+    if (logoUploadPreview) { logoUploadPreview.src = customLogoDataUrl; logoUploadPreview.style.display = 'block'; }
+    if (logoExport) { logoExport.src = customLogoDataUrl; }
+    if (logoPreview) { logoPreview.style.display = 'none'; }
+    applyCurrentLogoLayout();
+    showToast('LOGO 已更新！', 2000);
+  };
+  r.readAsDataURL(file);
+}
+// v28.1: 重置后不显示 logo-preview（避免空 src 渲染破损图片方框）
+function resetLogo() {
+  isCustomLogo = false; customLogoDataUrl = null;
+  if (logoUploadPreview) { logoUploadPreview.style.display = 'none'; logoUploadPreview.src = ''; }
+  if (logoExport) { logoExport.src = ''; }
+  showToast('已恢复默认 LOGO', 2000);
+}
+function applyCurrentLogoLayout() {
+  if (!logoUploadPreview || !logoPreview) return;
+  var layout = currentLogoLayout;
+  if (layout === 'bottom-right') { logoUploadPreview.style.right = '40px'; logoUploadPreview.style.bottom = '36px'; logoUploadPreview.style.transform = 'none'; logoUploadPreview.style.top = 'auto'; logoUploadPreview.style.left = 'auto'; logoUploadPreview.style.width = '50px'; logoUploadPreview.style.height = '50px'; logoUploadPreview.style.opacity = '0.85'; }
+  else if (layout === 'bottom-left') { logoUploadPreview.style.left = '40px'; logoUploadPreview.style.bottom = '36px'; logoUploadPreview.style.transform = 'none'; logoUploadPreview.style.top = 'auto'; logoUploadPreview.style.right = 'auto'; logoUploadPreview.style.width = '50px'; logoUploadPreview.style.height = '50px'; logoUploadPreview.style.opacity = '0.85'; }
+  else if (layout === 'bottom-center') { logoUploadPreview.style.left = '50%'; logoUploadPreview.style.bottom = '28px'; logoUploadPreview.style.transform = 'translateX(-50%)'; logoUploadPreview.style.top = 'auto'; logoUploadPreview.style.right = 'auto'; logoUploadPreview.style.width = '48px'; logoUploadPreview.style.height = '48px'; logoUploadPreview.style.opacity = '0.85'; }
+  else if (layout === 'top-center') { logoUploadPreview.style.left = '50%'; logoUploadPreview.style.top = '28px'; logoUploadPreview.style.transform = 'translateX(-50%)'; logoUploadPreview.style.bottom = 'auto'; logoUploadPreview.style.right = 'auto'; logoUploadPreview.style.width = '48px'; logoUploadPreview.style.height = '48px'; logoUploadPreview.style.opacity = '0.85'; }
+}
+
+// ====== LOGO LAYOUT ======
+var currentLogoLayout = 'bottom-right';
+function switchLogoLayout(b, layout) {
+  currentLogoLayout = layout;
+  document.querySelectorAll('#logo-layout-options .option-card').forEach(function(c) { c.classList.remove('selected'); }); b.classList.add('selected');
+  syncLogoGuardPosition(); syncLogoGuardVisibility(); adjustBottomRowSpacing();
+  if (logoPreview && logoExport) {
+    logoPreview.style.left = 'auto'; logoPreview.style.right = 'auto'; logoPreview.style.top = 'auto'; logoPreview.style.bottom = 'auto';
+    logoExport.style.left = 'auto'; logoExport.style.right = 'auto'; logoExport.style.top = 'auto'; logoExport.style.bottom = 'auto';
+    if (layout === 'bottom-center') {
+      logoPreview.style.left = '50%'; logoPreview.style.transform = 'translateX(-50%)'; logoPreview.style.bottom = '28px';
+      logoExport.style.left = '50%'; logoExport.style.transform = 'translateX(-50%)'; logoExport.style.bottom = '28px';
+      logoPreview.style.width = '48px'; logoPreview.style.height = '48px'; logoExport.style.width = '48px'; logoExport.style.height = '48px';
+      logoPreview.style.opacity = '0.85'; logoExport.style.opacity = '0.85';
+    } else if (layout === 'top-center') {
+      logoPreview.style.left = '50%'; logoPreview.style.transform = 'translateX(-50%)'; logoPreview.style.top = '28px';
+      logoExport.style.left = '50%'; logoExport.style.transform = 'translateX(-50%)'; logoExport.style.top = '28px';
+      logoPreview.style.width = '48px'; logoPreview.style.height = '48px'; logoExport.style.width = '48px'; logoExport.style.height = '48px';
+      logoPreview.style.opacity = '0.85'; logoExport.style.opacity = '0.85';
+    } else if (layout === 'bottom-left') {
+      logoPreview.style.left = '40px'; logoPreview.style.bottom = '36px'; logoPreview.style.transform = 'none';
+      logoExport.style.left = '40px'; logoExport.style.bottom = '36px'; logoExport.style.transform = 'none';
+      logoPreview.style.width = '50px'; logoPreview.style.height = '50px'; logoExport.style.width = '50px'; logoExport.style.height = '50px';
+      logoPreview.style.opacity = '0.85'; logoExport.style.opacity = '0.85';
+    } else {
+      logoPreview.style.right = '40px'; logoPreview.style.bottom = '36px'; logoPreview.style.transform = 'none';
+      logoExport.style.right = '40px'; logoExport.style.bottom = '36px'; logoExport.style.transform = 'none';
+      logoPreview.style.width = '50px'; logoPreview.style.height = '50px'; logoExport.style.width = '50px'; logoExport.style.height = '50px';
+      logoPreview.style.opacity = '0.85'; logoExport.style.opacity = '0.85';
+    }
+  }
+  applyCurrentLogoLayout();
+}
+
+// ====== LOGO GUARD SYNC ======
+function syncLogoGuardPosition() {
+  if (!blendLogoGuard) return;
+  blendLogoGuard.style.top = 'auto'; blendLogoGuard.style.bottom = 'auto'; blendLogoGuard.style.left = 'auto'; blendLogoGuard.style.right = 'auto'; blendLogoGuard.style.transform = 'none';
+  switch (currentLogoLayout) {
+    case 'bottom-right': blendLogoGuard.style.right = '16px'; blendLogoGuard.style.bottom = '14px'; blendLogoGuard.style.width = '80px'; blendLogoGuard.style.height = '80px'; break;
+    case 'bottom-left': blendLogoGuard.style.left = '16px'; blendLogoGuard.style.bottom = '14px'; blendLogoGuard.style.width = '80px'; blendLogoGuard.style.height = '80px'; break;
+    case 'bottom-center': blendLogoGuard.style.left = '50%'; blendLogoGuard.style.bottom = '8px'; blendLogoGuard.style.transform = 'translateX(-50%)'; blendLogoGuard.style.width = '80px'; blendLogoGuard.style.height = '80px'; break;
+    case 'top-center': blendLogoGuard.style.top = '8px'; blendLogoGuard.style.left = '50%'; blendLogoGuard.style.transform = 'translateX(-50%)'; blendLogoGuard.style.width = '80px'; blendLogoGuard.style.height = '80px'; break;
+  }
+}
+function syncLogoGuardVisibility() {
+  if (!blendLogoGuard) return;
+  var logoVisible = (logoPreview && logoPreview.style.display !== 'none') || (logoUploadPreview && logoUploadPreview.style.display !== 'none');
+  blendLogoGuard.style.display = logoVisible ? '' : 'none';
+}
+function autoExpandBgAdjust() { var g = document.getElementById('bg-adjust-group'); if (!g) return; if (document.getElementById('bg-scale-control').style.display !== 'none' || document.getElementById('bg-opacity-control').style.display !== 'none' || document.getElementById('bg-transparency-control').style.display !== 'none') g.classList.add('open'); }
+function autoExpandBlend() { var g = document.getElementById('blend-group'); if (!g) return; if (document.getElementById('blend-control').style.display !== 'none') g.classList.add('open'); }
+
+// ====== INIT ======
+// v27.0: LOGO 手动配置功能保留（上传/布局/显示切换），移除自动配色（colorizeLogo）
+
+// v24.0: AI 背景图路径映射（注入标记）
+var aiBgImages = {}; /* INJECT_AI_BG_PATHS */
+
+// v25.0: AI 背景图自动初始化函数（通过 source-in 模式高效注入）
+function initBg() {
+  var keys = Object.keys(aiBgImages);
+  if (keys.length === 0) return;
+  setBgImage(aiBgImages[keys[0]]);
+}
+/* INJECT_INIT_BG */
+
+window.addEventListener('DOMContentLoaded', function() {
+  autoFitTitleSize(); adjustBottomRowSpacing();
+});
+</script>
+</body>
+</html>

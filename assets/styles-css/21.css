@@ -1,0 +1,43 @@
+<style>
+/* v15.0 #21 超扁平设计 CSS 模板 */
+:root {
+  --ACCENT: #FF4488;
+  --ACCENT_R: 255; --ACCENT_G: 68; --ACCENT_B: 136;
+  --BG_R: 255; --BG_G: 245; --BG_B: 248;
+  --TEXT_R: 74; --TEXT_G: 32; --TEXT_B: 48;
+  --COVER_BG: linear-gradient(135deg, #FFF5F8 0%, #FFE8F0 40%, #FFD8E8 100%);
+  --OVERLAY_BG: linear-gradient(180deg, rgba(255,245,248,0.3) 0%, rgba(255,245,248,0.6) 50%, rgba(255,245,248,0.8) 100%);
+  --LOGO_GUARD_BG: rgba(255,245,248,0.45);
+  --SOFTLIGHT_BG: rgba(74,32,48,0.08);
+  --TEXT_PRIMARY: #4A2030;
+  --ACCOUNT_COLOR: rgba(74,32,48,0.55);
+  --AUTHOR_COLOR: rgba(74,32,48,0.5);
+  --SUPP_COLOR: rgba(74,32,48,0.6);
+  --DESC_COLOR: rgba(74,32,48,0.5);
+  --DIVIDER_BG: linear-gradient(to right, transparent, rgba(255,68,136,0.3), transparent);
+  --HIGHLIGHT_BG: rgba(255,68,136,0.12);
+  --TAG_LINE_COLOR: rgba(255,68,136,0.2);
+  --TAG_UNDERLINE: rgba(255,68,136,0.25);
+  --TAG_UNDERLINE_HOVER: rgba(255,68,136,0.5);
+  --TAG_DIAMOND: rgba(255,68,136,0.4);
+  --TAG_DIAMOND_HOVER: rgba(255,68,136,0.6);
+  --CH_MARK_COLOR: rgba(255,68,136,0.15);
+  --VERT_ACCENT_BG: #ff8ace;
+  --INK_BLOT_BG: rgba(255,68,136,0.08);
+  --SCATTER_COLOR: rgba(255,68,136,0.12);
+  --ENGRAVE_BG: rgba(255,68,136,0.05);
+  --MAP_COLOR: #ff6cb0;
+  --BORDER_COLOR: rgba(255,68,136,0.08);
+  --CONTENT_PADDING: 48px 64px 44px 64px;
+  --TITLE_SIZE: 52px;
+  --SUBTITLE_SIZE: 20px;
+  --SUPP_SIZE: 13px;
+  --DESC_SIZE: 12px;
+  --TAG_SIZE: 10px;
+  --MODE_BG: #F5F0E8;
+  --MODE_CARD_BG: rgba(255,255,255,0.6);
+  --MODE_TEXT: #3A3028;
+  --BODY_FONT: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif;
+}
+.main-title { font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif; }
+</style>

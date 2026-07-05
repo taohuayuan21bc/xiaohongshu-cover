@@ -1,0 +1,43 @@
+<style>
+/* v15.0 #25 科技感知识分享 CSS 模板 */
+:root {
+  --ACCENT: #38BDF8;
+  --ACCENT_R: 56; --ACCENT_G: 189; --ACCENT_B: 248;
+  --BG_R: 11; --BG_G: 25; --BG_B: 44;
+  --TEXT_R: 224; --TEXT_G: 240; --TEXT_B: 255;
+  --COVER_BG: linear-gradient(135deg, #0B192C 0%, #0F2440 40%, #081420 100%);
+  --OVERLAY_BG: linear-gradient(180deg, rgba(11,25,44,0.2) 0%, rgba(11,25,44,0.5) 50%, rgba(11,25,44,0.75) 100%);
+  --LOGO_GUARD_BG: rgba(11,25,44,0.35);
+  --SOFTLIGHT_BG: rgba(224,240,255,0.08);
+  --TEXT_PRIMARY: #E0F0FF;
+  --ACCOUNT_COLOR: rgba(224,240,255,0.55);
+  --AUTHOR_COLOR: rgba(224,240,255,0.5);
+  --SUPP_COLOR: rgba(224,240,255,0.6);
+  --DESC_COLOR: rgba(224,240,255,0.5);
+  --DIVIDER_BG: linear-gradient(to right, transparent, rgba(56,189,248,0.3), transparent);
+  --HIGHLIGHT_BG: rgba(56,189,248,0.12);
+  --TAG_LINE_COLOR: rgba(56,189,248,0.2);
+  --TAG_UNDERLINE: rgba(56,189,248,0.25);
+  --TAG_UNDERLINE_HOVER: rgba(56,189,248,0.5);
+  --TAG_DIAMOND: rgba(56,189,248,0.4);
+  --TAG_DIAMOND_HOVER: rgba(56,189,248,0.6);
+  --CH_MARK_COLOR: rgba(56,189,248,0.15);
+  --VERT_ACCENT_BG: #6aefff;
+  --INK_BLOT_BG: rgba(56,189,248,0.08);
+  --SCATTER_COLOR: rgba(56,189,248,0.12);
+  --ENGRAVE_BG: rgba(56,189,248,0.05);
+  --MAP_COLOR: #38BDF8;
+  --BORDER_COLOR: rgba(56,189,248,0.10);
+  --CONTENT_PADDING: 48px 64px 44px 64px;
+  --TITLE_SIZE: 52px;
+  --SUBTITLE_SIZE: 20px;
+  --SUPP_SIZE: 13px;
+  --DESC_SIZE: 12px;
+  --TAG_SIZE: 10px;
+  --MODE_BG: #1A1A1C;
+  --MODE_CARD_BG: rgba(255,255,255,0.05);
+  --MODE_TEXT: #EAE0D5;
+  --BODY_FONT: 'Noto Sans SC', sans-serif;
+}
+.main-title { font-family: 'Noto Sans SC', sans-serif; }
+</style>

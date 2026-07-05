@@ -1,0 +1,43 @@
+<style>
+/* v15.0 #18 新维多利亚排版 CSS 模板 */
+:root {
+  --ACCENT: #D4A843;
+  --ACCENT_R: 212; --ACCENT_G: 168; --ACCENT_B: 67;
+  --BG_R: 61; --BG_G: 12; --BG_B: 26;
+  --TEXT_R: 245; --TEXT_G: 230; --TEXT_B: 200;
+  --COVER_BG: linear-gradient(135deg, #3D0C1A 0%, #4A1022 40%, #300814 100%);
+  --OVERLAY_BG: linear-gradient(180deg, rgba(61,12,26,0.2) 0%, rgba(61,12,26,0.5) 50%, rgba(61,12,26,0.75) 100%);
+  --LOGO_GUARD_BG: rgba(61,12,26,0.35);
+  --SOFTLIGHT_BG: rgba(245,230,200,0.08);
+  --TEXT_PRIMARY: #F5E6C8;
+  --ACCOUNT_COLOR: rgba(245,230,200,0.55);
+  --AUTHOR_COLOR: rgba(245,230,200,0.5);
+  --SUPP_COLOR: rgba(245,230,200,0.6);
+  --DESC_COLOR: rgba(245,230,200,0.5);
+  --DIVIDER_BG: linear-gradient(to right, transparent, rgba(212,168,67,0.3), transparent);
+  --HIGHLIGHT_BG: rgba(212,168,67,0.12);
+  --TAG_LINE_COLOR: rgba(212,168,67,0.2);
+  --TAG_UNDERLINE: rgba(212,168,67,0.25);
+  --TAG_UNDERLINE_HOVER: rgba(212,168,67,0.5);
+  --TAG_DIAMOND: rgba(212,168,67,0.4);
+  --TAG_DIAMOND_HOVER: rgba(212,168,67,0.6);
+  --CH_MARK_COLOR: rgba(212,168,67,0.15);
+  --VERT_ACCENT_BG: #ffda75;
+  --INK_BLOT_BG: rgba(212,168,67,0.08);
+  --SCATTER_COLOR: rgba(212,168,67,0.12);
+  --ENGRAVE_BG: rgba(212,168,67,0.05);
+  --MAP_COLOR: #D4A843;
+  --BORDER_COLOR: rgba(212,168,67,0.10);
+  --CONTENT_PADDING: 56px 72px 48px 72px;
+  --TITLE_SIZE: 52px;
+  --SUBTITLE_SIZE: 20px;
+  --SUPP_SIZE: 14px;
+  --DESC_SIZE: 13px;
+  --TAG_SIZE: 11px;
+  --MODE_BG: #1A1A1C;
+  --MODE_CARD_BG: rgba(255,255,255,0.05);
+  --MODE_TEXT: #EAE0D5;
+  --BODY_FONT: 'Noto Serif SC', serif;
+}
+.main-title { font-family: 'Noto Serif SC', serif; }
+</style>

@@ -1,0 +1,43 @@
+<style>
+/* v15.0 #29 莫兰迪大字 CSS 模板 */
+:root {
+  --ACCENT: #C44B4B;
+  --ACCENT_R: 196; --ACCENT_G: 75; --ACCENT_B: 75;
+  --BG_R: 212; --BG_G: 197; --BG_B: 185;
+  --TEXT_R: 58; --TEXT_G: 34; --TEXT_B: 34;
+  --COVER_BG: linear-gradient(135deg, #D4C5B9 0%, #C9B8A8 40%, #B8A99A 100%);
+  --OVERLAY_BG: linear-gradient(180deg, rgba(212,197,185,0.3) 0%, rgba(212,197,185,0.6) 50%, rgba(212,197,185,0.8) 100%);
+  --LOGO_GUARD_BG: rgba(212,197,185,0.45);
+  --SOFTLIGHT_BG: rgba(58,34,34,0.08);
+  --TEXT_PRIMARY: #3A2222;
+  --ACCOUNT_COLOR: rgba(58,34,34,0.55);
+  --AUTHOR_COLOR: rgba(58,34,34,0.5);
+  --SUPP_COLOR: rgba(58,34,34,0.6);
+  --DESC_COLOR: rgba(58,34,34,0.5);
+  --DIVIDER_BG: linear-gradient(to right, transparent, rgba(196,75,75,0.3), transparent);
+  --HIGHLIGHT_BG: rgba(196,75,75,0.12);
+  --TAG_LINE_COLOR: rgba(196,75,75,0.2);
+  --TAG_UNDERLINE: rgba(196,75,75,0.25);
+  --TAG_UNDERLINE_HOVER: rgba(196,75,75,0.5);
+  --TAG_DIAMOND: rgba(196,75,75,0.4);
+  --TAG_DIAMOND_HOVER: rgba(196,75,75,0.6);
+  --CH_MARK_COLOR: rgba(196,75,75,0.15);
+  --VERT_ACCENT_BG: #ff9191;
+  --INK_BLOT_BG: rgba(196,75,75,0.08);
+  --SCATTER_COLOR: rgba(196,75,75,0.12);
+  --ENGRAVE_BG: rgba(196,75,75,0.05);
+  --MAP_COLOR: #ec7373;
+  --BORDER_COLOR: rgba(196,75,75,0.08);
+  --CONTENT_PADDING: 44px 60px 40px 60px;
+  --TITLE_SIZE: 60px;
+  --SUBTITLE_SIZE: 24px;
+  --SUPP_SIZE: 14px;
+  --DESC_SIZE: 13px;
+  --TAG_SIZE: 11px;
+  --MODE_BG: #F5F0E8;
+  --MODE_CARD_BG: rgba(255,255,255,0.6);
+  --MODE_TEXT: #3A3028;
+  --BODY_FONT: 'Noto Serif SC', serif;
+}
+.main-title { font-family: 'Noto Serif SC', serif; }
+</style>
